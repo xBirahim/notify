@@ -10,6 +10,26 @@ struct StatusCommand: AsyncParsableCommand {
     var output: OutputOptions
 
     mutating func run() async throws {
-        throw CleanExit.message("status not implemented yet")
+        let service = NotificationService()
+        let status = await service.getStatus()
+
+        if output.json {
+            try CommandOutput.success(
+                command: "status",
+                status: "ok",
+                data: status,
+                json: true
+            )
+            return
+        }
+
+        if output.quiet {
+            return
+        }
+
+        print("authorization: \(status.authorization)")
+        print("alerts: \(status.alerts ? "enabled" : "disabled")")
+        print("sounds: \(status.sounds ? "enabled" : "disabled")")
+        print("badges: \(status.badges ? "enabled" : "disabled")")
     }
 }
