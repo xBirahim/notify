@@ -27,7 +27,7 @@ notifyctl version --json
 This creates:
 
 - `/Applications/NotifyCtl.app`
-- `/usr/local/bin/notifyctl` (symlink to app executable, via `install-link`)
+- `/usr/local/bin/notifyctl` (launcher script to app executable, via `install-link`)
 
 ## Implemented MVP commands
 

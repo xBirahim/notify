@@ -58,6 +58,12 @@ struct RequestPermissionCommand: AsyncParsableCommand {
             }
         } catch let exit as ExitCode {
             throw exit
+        } catch let error as NotifyCtlError {
+            try CommandOutput.failure(
+                command: "request-permission",
+                error: error,
+                json: output.json
+            )
         } catch {
             try CommandOutput.failure(
                 command: "request-permission",
