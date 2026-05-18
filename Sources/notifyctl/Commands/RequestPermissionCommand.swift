@@ -1,5 +1,5 @@
 import ArgumentParser
-import UserNotifications
+@preconcurrency import UserNotifications
 
 struct RequestPermissionCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -23,22 +23,22 @@ struct RequestPermissionCommand: AsyncParsableCommand {
     var critical: Bool = false
 
     mutating func run() async throws {
-        let service = NotificationService()
-        var options: UNAuthorizationOptions = [.alert]
-        if sound {
-            options.insert(.sound)
-        }
-        if badge {
-            options.insert(.badge)
-        }
-        if provisional {
-            options.insert(.provisional)
-        }
-        if critical {
-            options.insert(.criticalAlert)
-        }
-
         do {
+            let service = try NotificationService.makeDefault()
+            var options: UNAuthorizationOptions = [.alert]
+            if sound {
+                options.insert(.sound)
+            }
+            if badge {
+                options.insert(.badge)
+            }
+            if provisional {
+                options.insert(.provisional)
+            }
+            if critical {
+                options.insert(.criticalAlert)
+            }
+
             let granted = try await service.requestPermission(options: options)
             let data = PermissionResult(granted: granted)
 

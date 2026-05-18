@@ -1,11 +1,22 @@
 import Foundation
-import UserNotifications
+@preconcurrency import UserNotifications
 
 final class NotificationService {
     private let center: UNUserNotificationCenter
 
-    init(center: UNUserNotificationCenter = .current()) {
+    init(center: UNUserNotificationCenter) {
         self.center = center
+    }
+
+    static func makeDefault() throws -> NotificationService {
+        let bundlePath = Bundle.main.bundlePath
+        if bundlePath.contains("/.build/") {
+            throw NotifyCtlError.systemError(
+                message: "UserNotifications is not available from this runtime context.",
+                detail: "Build with swift build -c release and run the installed binary from a user session."
+            )
+        }
+        return NotificationService(center: .current())
     }
 
     func getStatus() async -> NotificationStatus {
@@ -127,23 +138,11 @@ final class NotificationService {
         var pending: [NotificationRecord] = []
 
         if includeDelivered {
-            delivered = await deliveredNotifications().map { notification in
-                record(
-                    id: notification.request.identifier,
-                    state: "delivered",
-                    content: notification.request.content
-                )
-            }
+            delivered = await deliveredRecords()
         }
 
         if includePending {
-            pending = await pendingNotificationRequests().map { request in
-                record(
-                    id: request.identifier,
-                    state: "pending",
-                    content: request.content
-                )
-            }
+            pending = await pendingRecords()
         }
 
         if let group {
@@ -164,7 +163,7 @@ final class NotificationService {
 }
 
 private extension NotificationService {
-    func record(id: String, state: String, content: UNNotificationContent) -> NotificationRecord {
+    static func record(id: String, state: String, content: UNNotificationContent) -> NotificationRecord {
         let level: NotificationLevel?
         if let raw = content.userInfo["level"] as? String {
             level = NotificationLevel(rawValue: raw)
@@ -193,18 +192,32 @@ private extension NotificationService {
         }
     }
 
-    func deliveredNotifications() async -> [UNNotification] {
+    func deliveredRecords() async -> [NotificationRecord] {
         await withCheckedContinuation { continuation in
             center.getDeliveredNotifications { notifications in
-                continuation.resume(returning: notifications)
+                let records = notifications.map { notification in
+                    Self.record(
+                        id: notification.request.identifier,
+                        state: "delivered",
+                        content: notification.request.content
+                    )
+                }
+                continuation.resume(returning: records)
             }
         }
     }
 
-    func pendingNotificationRequests() async -> [UNNotificationRequest] {
+    func pendingRecords() async -> [NotificationRecord] {
         await withCheckedContinuation { continuation in
             center.getPendingNotificationRequests { requests in
-                continuation.resume(returning: requests)
+                let records = requests.map { request in
+                    Self.record(
+                        id: request.identifier,
+                        state: "pending",
+                        content: request.content
+                    )
+                }
+                continuation.resume(returning: records)
             }
         }
     }
@@ -222,7 +235,7 @@ private extension NotificationService {
     }
 
     func add(_ request: UNNotificationRequest) async throws {
-        try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             center.add(request) { error in
                 if let error {
                     continuation.resume(throwing: error)

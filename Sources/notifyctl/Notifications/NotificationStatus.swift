@@ -1,4 +1,4 @@
-import UserNotifications
+@preconcurrency import UserNotifications
 
 struct NotificationStatus: Codable {
     let authorization: String
