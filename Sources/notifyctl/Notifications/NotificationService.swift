@@ -10,10 +10,11 @@ final class NotificationService {
 
     static func makeDefault() throws -> NotificationService {
         let bundlePath = Bundle.main.bundlePath
-        if bundlePath.contains("/.build/") {
+        let isAppBundle = bundlePath.hasSuffix(".app")
+        if !isAppBundle {
             throw NotifyCtlError.systemError(
                 message: "UserNotifications is not available from this runtime context.",
-                detail: "Build with swift build -c release and run the installed binary from a user session."
+                detail: "Run notifyctl from a macOS .app bundle executable (for example /Applications/NotifyCtl.app/Contents/MacOS/notifyctl)."
             )
         }
         return NotificationService(center: .current())

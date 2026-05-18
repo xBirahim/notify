@@ -14,6 +14,21 @@ swift build
 swift run notifyctl --help
 ```
 
+## Install on macOS (required for UserNotifications)
+
+`UNUserNotificationCenter` requires an app bundle identity. Install `notifyctl` through a `.app` wrapper:
+
+```bash
+make install-app
+sudo make install-link
+notifyctl version --json
+```
+
+This creates:
+
+- `/Applications/NotifyCtl.app`
+- `/usr/local/bin/notifyctl` (symlink to app executable, via `install-link`)
+
 ## Implemented MVP commands
 
 - `status`
