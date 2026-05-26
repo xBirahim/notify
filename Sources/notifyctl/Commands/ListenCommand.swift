@@ -2,13 +2,14 @@ import ArgumentParser
 import Foundation
 @preconcurrency import UserNotifications
 
-struct ListenCommand: ParsableCommand {
+struct ListenCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "listen",
         abstract: "Listen for notification actions (long-running process)."
     )
 
-    mutating func run() throws {
+    @MainActor
+    mutating func run() async throws {
         let service = try NotificationService.makeDefault()
         service.registerCategories()
 
@@ -16,6 +17,6 @@ struct ListenCommand: ParsableCommand {
         let listener = NotificationListener()
         center.delegate = listener
 
-        dispatchMain()
+        await withUnsafeContinuation { (_: UnsafeContinuation<Void, Never>) in }
     }
 }
