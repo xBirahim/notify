@@ -3,7 +3,7 @@ import Foundation
 
 @main
 struct NotifyCtl: AsyncParsableCommand {
-    static let appVersion = "0.1.0"
+    static let appVersion = "0.2.0"
 
     static let configuration = CommandConfiguration(
         commandName: "notifyctl",
@@ -18,6 +18,8 @@ struct NotifyCtl: AsyncParsableCommand {
             ListCommand.self,
             GetCommand.self,
             TestCommand.self,
+            ListenCommand.self,
+            AgentCommand.self,
             VersionCommand.self
         ]
     )
