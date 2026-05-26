@@ -1,7 +1,7 @@
 import ArgumentParser
 import Foundation
 
-struct VersionCommand: AsyncParsableCommand {
+struct VersionCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "version",
         abstract: "Print notifyctl version."
@@ -9,7 +9,7 @@ struct VersionCommand: AsyncParsableCommand {
 
     @OptionGroup var output: OutputOptions
 
-    mutating func run() async throws {
+    mutating func run() throws {
         let data = VersionData(
             name: "notifyctl",
             version: NotifyCtl.appVersion,

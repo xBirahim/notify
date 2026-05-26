@@ -30,6 +30,9 @@ struct UpdateCommand: AsyncParsableCommand {
     @Option(help: "Interruption level: passive, active, time-sensitive.")
     var interruptionLevel: InterruptionLevel?
 
+    @Option(help: "Sound type.")
+    var sound: NotificationSound = .default
+
     @OptionGroup var output: OutputOptions
 
     mutating func run() async throws {
@@ -42,7 +45,7 @@ struct UpdateCommand: AsyncParsableCommand {
                 title: title ?? existing?.title,
                 subtitle: subtitle ?? existing?.subtitle,
                 body: body ?? existing?.body ?? "",
-                sound: .default,
+                sound: sound,
                 thread: thread ?? existing?.thread,
                 category: category?.rawValue ?? existing?.category,
                 url: url ?? existing?.url,
@@ -51,7 +54,7 @@ struct UpdateCommand: AsyncParsableCommand {
             )
 
             if output.dryRun {
-                let dry = UpdateResult(body: payload.body, category: payload.category, interruptionLevel: payload.interruptionLevel?.rawValue)
+                let dry = UpdateResult(body: payload.body, category: payload.category, interruptionLevel: payload.interruptionLevel?.rawValue, sound: payload.sound.rawValue)
                 if output.json {
                     try CommandOutput.success(
                         command: "update",
@@ -67,7 +70,7 @@ struct UpdateCommand: AsyncParsableCommand {
             }
 
             _ = try await service.send(payload)
-            let result = UpdateResult(body: payload.body, category: payload.category, interruptionLevel: payload.interruptionLevel?.rawValue)
+            let result = UpdateResult(body: payload.body, category: payload.category, interruptionLevel: payload.interruptionLevel?.rawValue, sound: payload.sound.rawValue)
 
             if output.json {
                 try CommandOutput.success(
@@ -102,4 +105,5 @@ private struct UpdateResult: Codable {
     let body: String
     let category: String?
     let interruptionLevel: String?
+    let sound: String
 }

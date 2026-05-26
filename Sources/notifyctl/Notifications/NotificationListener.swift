@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 @preconcurrency import UserNotifications
 
@@ -10,11 +11,13 @@ final class NotificationListener: NSObject, UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let content = response.notification.request.content
+        let urlString = content.userInfo["url"] as? String
+        
         let event = ActionEvent(
             notificationId: response.notification.request.identifier,
             action: response.actionIdentifier,
             category: content.categoryIdentifier,
-            url: content.userInfo["url"] as? String,
+            url: urlString,
             timestamp: ISO8601DateFormatter().string(from: Date())
         )
 
@@ -25,6 +28,13 @@ final class NotificationListener: NSObject, UNUserNotificationCenterDelegate {
         if let data = try? encoder.encode(event),
            let json = String(data: data, encoding: .utf8) {
             print(json)
+        }
+
+        // Si l'utilisateur clique sur la notification (default action) ou sur l'action "OPEN" et qu'une URL est présente, on l'ouvre
+        if response.actionIdentifier == UNNotificationDefaultActionIdentifier || response.actionIdentifier == NotifyAction.open.rawValue {
+            if let urlString = urlString, let url = URL(string: urlString) {
+                NSWorkspace.shared.open(url)
+            }
         }
 
         completionHandler()
