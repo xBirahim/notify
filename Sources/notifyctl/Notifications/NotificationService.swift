@@ -1,3 +1,4 @@
+import CoreServices
 import Foundation
 @preconcurrency import UserNotifications
 
@@ -13,10 +14,11 @@ final class NotificationService {
         let isAppBundle = bundlePath.hasSuffix(".app")
         if !isAppBundle {
             throw NotifyCtlError.systemError(
-                message: "UserNotifications is not available from this runtime context.",
-                detail: "Run notifyctl from a macOS .app bundle executable (for example /Applications/NotifyCtl.app/Contents/MacOS/notifyctl)."
+                message: "UserNotifications requires a macOS .app bundle.",
+                detail: "Install notifyctl with: make install"
             )
         }
+        LSRegisterURL(Bundle.main.bundleURL as CFURL, true)
         return NotificationService(center: .current())
     }
 
@@ -35,14 +37,16 @@ final class NotificationService {
         case .authorized, .provisional, .ephemeral:
             return
         case .notDetermined:
+            let granted = try? await requestAuthorization(options: .provisional)
+            if granted == true { return }
             throw NotifyCtlError.permissionDenied(
                 message: "Notifications are not authorized.",
-                detail: "Run notifyctl request-permission before send."
+                detail: "Run notifyctl request-permission to open System Settings."
             )
         case .denied:
             throw NotifyCtlError.permissionDenied(
                 message: "Notifications are denied in macOS settings.",
-                detail: "Enable notifications for notifyctl in System Settings."
+                detail: "Enable notifications for notifyctl in System Settings -> Notifications."
             )
         @unknown default:
             throw NotifyCtlError.systemError(

@@ -1,4 +1,8 @@
-.PHONY: build run test release install install-app install-link clean
+PREFIX ?= $(HOME)/.local
+BUNDLE_DIR = $(PREFIX)/share/NotifyCtl.app
+BIN_DIR = $(PREFIX)/bin
+
+.PHONY: build run test release install bundle link clean
 
 build:
 	swift build
@@ -12,18 +16,33 @@ test:
 release:
 	swift build -c release
 
-install: install-app install-link
+install: bundle link
+	@echo ""
+	@echo "  notifyctl installed!"
+	@echo ""
+	@echo "  Add to your shell config (e.g. ~/.zshrc):"
+	@echo '    export PATH="$$HOME/.local/bin:$$PATH"'
+	@echo ""
+	@echo "  Then run:"
+	@echo "    notifyctl status"
+	@echo "    notifyctl request-permission"
+	@echo "    notifyctl send \"Build terminé\""
+	@echo ""
 
-install-app: release
-	mkdir -p /Applications/NotifyCtl.app/Contents/MacOS
-	mkdir -p /Applications/NotifyCtl.app/Contents
-	cp .build/release/notifyctl /Applications/NotifyCtl.app/Contents/MacOS/notifyctl
-	chmod 755 /Applications/NotifyCtl.app/Contents/MacOS/notifyctl
-	printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>notifyctl</string><key>CFBundleIdentifier</key><string>io.notifyctl.app</string><key>CFBundleName</key><string>NotifyCtl</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>0.1.0</string><key>CFBundleVersion</key><string>1</string></dict></plist>' > /Applications/NotifyCtl.app/Contents/Info.plist
+bundle: release
+	mkdir -p "$(BUNDLE_DIR)/Contents/MacOS"
+	cp .build/release/notifyctl "$(BUNDLE_DIR)/Contents/MacOS/notifyctl"
+	chmod 755 "$(BUNDLE_DIR)/Contents/MacOS/notifyctl"
+	printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>notifyctl</string><key>CFBundleIdentifier</key><string>io.notifyctl.app</string><key>CFBundleName</key><string>NotifyCtl</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>0.1.0</string><key>CFBundleVersion</key><string>1</string></dict></plist>' > "$(BUNDLE_DIR)/Contents/Info.plist"
+	codesign -s - --force --deep "$(BUNDLE_DIR)" 2>/dev/null || true
+	@/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$(BUNDLE_DIR)" 2>/dev/null || true
+	@echo "Created $(BUNDLE_DIR)"
 
-install-link:
-	printf '%s\n' '#!/bin/sh' 'exec /Applications/NotifyCtl.app/Contents/MacOS/notifyctl "$$@"' | tee /usr/local/bin/notifyctl >/dev/null
-	chmod 755 /usr/local/bin/notifyctl
+link:
+	mkdir -p "$(BIN_DIR)"
+	printf '%s\n' '#!/bin/sh' 'exec "$(BUNDLE_DIR)/Contents/MacOS/notifyctl" "$$@"' > "$(BIN_DIR)/notifyctl"
+	chmod 755 "$(BIN_DIR)/notifyctl"
+	@echo "Created $(BIN_DIR)/notifyctl"
 
 clean:
 	swift package clean
