@@ -4,7 +4,6 @@ import ArgumentParser
 enum InterruptionLevel: String, Codable, ExpressibleByArgument {
     case passive
     case active
-    case timeSensitive = "time-sensitive"
 }
 
 extension InterruptionLevel {
@@ -14,8 +13,6 @@ extension InterruptionLevel {
             return .passive
         case .active:
             return .active
-        case .timeSensitive:
-            return .timeSensitive
         }
     }
 }
