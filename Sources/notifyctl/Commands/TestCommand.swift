@@ -6,6 +6,9 @@ struct TestCommand: AsyncParsableCommand {
         abstract: "Send a test notification."
     )
 
+    @Option(help: "Interruption level: passive, active, time-sensitive.")
+    var interruptionLevel: InterruptionLevel?
+
     @OptionGroup var output: OutputOptions
 
     mutating func run() async throws {
@@ -18,6 +21,7 @@ struct TestCommand: AsyncParsableCommand {
             thread: "notifyctl",
             category: nil,
             url: nil,
+            interruptionLevel: interruptionLevel,
             userInfo: [:]
         )
 

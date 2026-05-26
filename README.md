@@ -55,6 +55,7 @@ Make sure `~/.local/bin` is in your `PATH` (add `export PATH="$HOME/.local/bin:$
 - `--thread` — macOS thread grouping (e.g. `deploy-api-prod`)
 - `--url` — attached URL (passed in userInfo)
 - `--sound` — `default` or `none`
+- `--interruption-level` — `passive`, `active`, or `time-sensitive` (default: active)
 - `--json` / `--quiet` / `--dry-run` — output control
 
 ## Examples
@@ -63,6 +64,7 @@ Make sure `~/.local/bin` is in your `PATH` (add `export PATH="$HOME/.local/bin:$
 notifyctl status --json
 notifyctl request-permission --sound --json
 notifyctl send --id deploy-api-prod --title "Déploiement" --body "Step 2/5: migrations" --category deploy --thread deploy-api-prod --url "https://grafana.example/d/abc" --json
+notifyctl send --id alert-cpu --title "CPU critique" --body "api-prod > 95%" --category alert --interruption-level time-sensitive
 notifyctl update deploy-api-prod --title "Déploiement terminé" --body "OK en 3m42s"
 notifyctl dismiss --thread deploy-api-prod
 notifyctl dismiss --all

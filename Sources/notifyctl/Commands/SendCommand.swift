@@ -34,6 +34,9 @@ struct SendCommand: AsyncParsableCommand {
     @Option(help: "Sound type.")
     var sound: NotificationSound = .default
 
+    @Option(help: "Interruption level: passive, active, time-sensitive.")
+    var interruptionLevel: InterruptionLevel?
+
     @OptionGroup var output: OutputOptions
 
     mutating func run() async throws {
@@ -45,7 +48,8 @@ struct SendCommand: AsyncParsableCommand {
                 let dryResult = SendResult(
                     title: payload.title ?? "notifyctl",
                     body: payload.body,
-                    category: payload.category
+                    category: payload.category,
+                    interruptionLevel: payload.interruptionLevel?.rawValue
                 )
                 if output.json {
                     try CommandOutput.success(
@@ -66,7 +70,8 @@ struct SendCommand: AsyncParsableCommand {
             let result = SendResult(
                 title: payload.title ?? "notifyctl",
                 body: payload.body,
-                category: payload.category
+                category: payload.category,
+                interruptionLevel: payload.interruptionLevel?.rawValue
             )
 
             if output.json {
@@ -122,6 +127,7 @@ private extension SendCommand {
             thread: thread,
             category: category?.rawValue,
             url: url,
+            interruptionLevel: interruptionLevel,
             userInfo: [:]
         )
     }
@@ -131,4 +137,5 @@ private struct SendResult: Codable {
     let title: String
     let body: String
     let category: String?
+    let interruptionLevel: String?
 }

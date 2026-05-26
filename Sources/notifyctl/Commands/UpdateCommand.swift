@@ -27,6 +27,9 @@ struct UpdateCommand: AsyncParsableCommand {
     @Option(help: "URL to attach.")
     var url: String?
 
+    @Option(help: "Interruption level: passive, active, time-sensitive.")
+    var interruptionLevel: InterruptionLevel?
+
     @OptionGroup var output: OutputOptions
 
     mutating func run() async throws {
@@ -43,11 +46,12 @@ struct UpdateCommand: AsyncParsableCommand {
                 thread: thread ?? existing?.thread,
                 category: category?.rawValue ?? existing?.category,
                 url: url ?? existing?.url,
+                interruptionLevel: interruptionLevel,
                 userInfo: [:]
             )
 
             if output.dryRun {
-                let dry = UpdateResult(body: payload.body, category: payload.category)
+                let dry = UpdateResult(body: payload.body, category: payload.category, interruptionLevel: payload.interruptionLevel?.rawValue)
                 if output.json {
                     try CommandOutput.success(
                         command: "update",
@@ -63,7 +67,7 @@ struct UpdateCommand: AsyncParsableCommand {
             }
 
             _ = try await service.send(payload)
-            let result = UpdateResult(body: payload.body, category: payload.category)
+            let result = UpdateResult(body: payload.body, category: payload.category, interruptionLevel: payload.interruptionLevel?.rawValue)
 
             if output.json {
                 try CommandOutput.success(
@@ -97,4 +101,5 @@ struct UpdateCommand: AsyncParsableCommand {
 private struct UpdateResult: Codable {
     let body: String
     let category: String?
+    let interruptionLevel: String?
 }

@@ -7,5 +7,6 @@ struct NotificationPayload: Codable {
     var thread: String?
     var category: String?
     var url: String?
+    var interruptionLevel: InterruptionLevel?
     var userInfo: [String: String]
 }

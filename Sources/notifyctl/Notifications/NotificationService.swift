@@ -84,6 +84,10 @@ final class NotificationService {
             content.threadIdentifier = thread
         }
 
+        if let level = payload.interruptionLevel {
+            content.interruptionLevel = level.systemValue
+        }
+
         let request = UNNotificationRequest(
             identifier: identifier,
             content: content,
