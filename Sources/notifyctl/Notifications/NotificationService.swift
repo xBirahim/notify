@@ -108,7 +108,14 @@ final class NotificationService {
             createdAt: existing?.createdAt ?? now,
             updatedAt: existing != nil ? now : nil
         )
-        try? store.appendNotification(record)
+        do {
+            try store.appendNotification(record)
+        } catch {
+            throw NotifyCtlError.systemError(
+                message: "Notification delivered but failed to persist local record.",
+                detail: String(describing: error)
+            )
+        }
 
         return identifier
     }
@@ -123,12 +130,12 @@ final class NotificationService {
 
         let ack = UNNotificationAction(
             identifier: NotifyAction.acknowledge.rawValue,
-            title: "Acquitter",
+            title: "Acknowledge",
             options: []
         )
         let open = UNNotificationAction(
             identifier: NotifyAction.open.rawValue,
-            title: "Ouvrir",
+            title: "Open",
             options: .foreground
         )
         let silence = UNNotificationAction(
@@ -146,7 +153,7 @@ final class NotificationService {
 
         let retry = UNNotificationAction(
             identifier: NotifyAction.retry.rawValue,
-            title: "Relancer",
+            title: "Retry",
             options: []
         )
 
@@ -199,24 +206,6 @@ final class NotificationService {
 }
 
 private extension NotificationService {
-    static func record(id: String, state: String, content: UNNotificationContent) -> NotificationRecord {
-        let category = content.categoryIdentifier.isEmpty ? nil : content.categoryIdentifier
-        let thread = content.threadIdentifier.isEmpty ? nil : content.threadIdentifier
-        let url = content.userInfo["url"] as? String
-
-        return NotificationRecord(
-            id: id,
-            title: content.title,
-            subtitle: content.subtitle,
-            body: content.body,
-            category: category,
-            thread: thread,
-            url: url,
-            createdAt: nil,
-            updatedAt: nil
-        )
-    }
-
     func notificationSettings() async -> UNNotificationSettings {
         await withCheckedContinuation { continuation in
             center.getNotificationSettings { settings in

@@ -12,9 +12,17 @@ struct LocalStore {
     }()
 
     init(fileManager: FileManager = .default) {
-        let support = fileManager.urls(
-            for: .applicationSupportDirectory, in: .userDomainMask
-        ).first!.appendingPathComponent("notifyctl", isDirectory: true)
+        let support: URL
+        if let appSupport = fileManager.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first {
+            support = appSupport.appendingPathComponent("notifyctl", isDirectory: true)
+        } else {
+            support = fileManager.homeDirectoryForCurrentUser
+                .appendingPathComponent(".local/share/notifyctl", isDirectory: true)
+        }
+
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
         notificationsURL = support.appendingPathComponent("notifications.jsonl")
         actionsURL = support.appendingPathComponent("actions.jsonl")
