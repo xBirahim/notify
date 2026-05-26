@@ -34,7 +34,7 @@ struct SendCommand: AsyncParsableCommand {
     @Option(help: "Sound type.")
     var sound: NotificationSound = .default
 
-    @Option(help: "Interruption level: passive, active, time-sensitive.")
+    @Option(help: "Interruption level: passive, active.")
     var interruptionLevel: InterruptionLevel?
 
     @OptionGroup var output: OutputOptions

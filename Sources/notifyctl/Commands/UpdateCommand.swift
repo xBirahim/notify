@@ -27,7 +27,7 @@ struct UpdateCommand: AsyncParsableCommand {
     @Option(help: "URL to attach.")
     var url: String?
 
-    @Option(help: "Interruption level: passive, active, time-sensitive.")
+    @Option(help: "Interruption level: passive, active.")
     var interruptionLevel: InterruptionLevel?
 
     @Option(help: "Sound type.")

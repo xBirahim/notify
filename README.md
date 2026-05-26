@@ -99,10 +99,7 @@ Send a notification.
 | `--thread` | Thread identifier for macOS grouping |
 | `--url` | URL to attach |
 | `--sound` | Sound type: `default`, `none` (default: `default`) |
-| `--interruption-level` | Interruption level: `passive`, `active`, `time-sensitive` |
-| `--json` | Machine-readable JSON output |
-| `--quiet` | Suppress non-error output |
-| `--dry-run` | Validate input without sending |
+| `--interruption-level` | Interruption level: `passive`, `active` |
 
 ### `notifyctl update`
 
@@ -120,7 +117,7 @@ Update a notification by replacing it (same engine as `send`).
 | `--category` | Category: `plain`, `alert`, `job`, `deploy` |
 | `--thread` | Thread identifier |
 | `--url` | URL to attach |
-| `--interruption-level` | Interruption level: `passive`, `active`, `time-sensitive` |
+| `--interruption-level` | Interruption level: `passive`, `active` |
 | `--json` | Machine-readable JSON output |
 | `--quiet` | Suppress non-error output |
 | `--dry-run` | Validate input without sending |
@@ -176,7 +173,7 @@ Send a test notification.
 
 | Option | Description |
 |--------|-------------|
-| `--interruption-level` | Interruption level: `passive`, `active`, `time-sensitive` |
+| `--interruption-level` | Interruption level: `passive`, `active` |
 | `--json` | Machine-readable JSON output |
 | `--quiet` | Suppress non-error output |
 | `--dry-run` | Validate input without sending |
@@ -312,14 +309,6 @@ notifyctl send \
   --interruption-level active \
   --json
 
-# Time-sensitive alert
-notifyctl send \
-  --id alert-cpu \
-  --title "CPU critique" \
-  --body "api-prod > 95%" \
-  --category alert \
-  --interruption-level time-sensitive
-
 # Dry run (validate without sending)
 notifyctl send "Test" --dry-run --json
 ```
@@ -386,9 +375,8 @@ notifyctl agent uninstall
 # Quick smoke test
 notifyctl test
 
-# With interruption level
-notifyctl test --interruption-level time-sensitive
 ```
+
 
 ### Scripting with JSON
 

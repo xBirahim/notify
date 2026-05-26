@@ -6,7 +6,7 @@ struct TestCommand: AsyncParsableCommand {
         abstract: "Send a test notification."
     )
 
-    @Option(help: "Interruption level: passive, active, time-sensitive.")
+    @Option(help: "Interruption level: passive, active.")
     var interruptionLevel: InterruptionLevel?
 
     @OptionGroup var output: OutputOptions

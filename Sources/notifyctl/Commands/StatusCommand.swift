@@ -32,7 +32,7 @@ struct StatusCommand: AsyncParsableCommand {
             print("alerts: \(status.alerts ? "enabled" : "disabled")")
             print("sounds: \(status.sounds ? "enabled" : "disabled")")
             print("badges: \(status.badges ? "enabled" : "disabled")")
-            print("timeSensitive: \(status.timeSensitive ? "enabled" : "disabled")")
+
         } catch let exit as ExitCode {
             throw exit
         } catch let error as NotifyCtlError {
