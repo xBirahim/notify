@@ -13,8 +13,8 @@ struct GetCommand: AsyncParsableCommand {
 
     mutating func run() async throws {
         do {
-            let service = try NotificationService.makeDefault()
-            guard let record = await service.get(id: id) else {
+            let store = LocalStore()
+            guard let record = store.getNotification(id: id) else {
                 throw NotifyCtlError.notFound(
                     message: "Notification not found.",
                     detail: nil
@@ -30,9 +30,9 @@ struct GetCommand: AsyncParsableCommand {
                     json: true
                 )
             } else if !output.quiet {
-                let level = record.level?.rawValue ?? "-"
-                let group = record.group ?? "-"
-                print("\(record.state): \(record.id) \(record.title) \(record.message) \(level) \(group)")
+                let cat = record.category ?? "-"
+                let thr = record.thread ?? "-"
+                print("\(record.id) \(record.title) \(record.body) \(cat) \(thr)")
             }
         } catch let exit as ExitCode {
             throw exit

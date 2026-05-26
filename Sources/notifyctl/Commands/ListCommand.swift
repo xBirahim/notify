@@ -3,36 +3,24 @@ import ArgumentParser
 struct ListCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "list",
-        abstract: "List pending and delivered notifications."
+        abstract: "List notifications from local store."
     )
 
-    @Flag(help: "Include pending notifications.")
-    var pending: Bool = false
-
-    @Flag(help: "Include delivered notifications.")
-    var delivered: Bool = false
-
-    @Option(help: "Filter by logical group.")
-    var group: String?
+    @Option(help: "Filter by thread identifier.")
+    var thread: String?
 
     @OptionGroup var output: OutputOptions
 
     mutating func run() async throws {
         do {
-            let includePending = pending || (!pending && !delivered)
-            let includeDelivered = delivered || (!pending && !delivered)
-            let service = try NotificationService.makeDefault()
-            let result = await service.list(
-                includePending: includePending,
-                includeDelivered: includeDelivered,
-                group: group
-            )
+            let store = LocalStore()
+            let records = store.listNotifications(thread: thread)
 
             if output.json {
                 try CommandOutput.success(
                     command: "list",
                     status: "ok",
-                    data: result,
+                    data: records,
                     json: true
                 )
                 return
@@ -42,30 +30,13 @@ struct ListCommand: AsyncParsableCommand {
                 return
             }
 
-            if includeDelivered {
-                print("DELIVERED")
-                if result.delivered.isEmpty {
-                    print("  (none)")
-                } else {
-                    for item in result.delivered {
-                        let level = item.level?.rawValue ?? "-"
-                        let group = item.group ?? "-"
-                        print("  \(item.id)  \(item.title)  \(item.message)  \(level)  \(group)")
-                    }
-                }
-                print("")
-            }
-
-            if includePending {
-                print("PENDING")
-                if result.pending.isEmpty {
-                    print("  (none)")
-                } else {
-                    for item in result.pending {
-                        let level = item.level?.rawValue ?? "-"
-                        let group = item.group ?? "-"
-                        print("  \(item.id)  \(item.title)  \(item.message)  \(level)  \(group)")
-                    }
+            if records.isEmpty {
+                print("(no notifications)")
+            } else {
+                for item in records {
+                    let cat = item.category ?? "-"
+                    let thr = item.thread ?? "-"
+                    print("  \(item.id)  \(item.title)  \(item.body)  \(cat)  \(thr)")
                 }
             }
         } catch let exit as ExitCode {

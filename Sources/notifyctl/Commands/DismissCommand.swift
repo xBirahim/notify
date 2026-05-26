@@ -12,8 +12,8 @@ struct DismissCommand: AsyncParsableCommand {
     @Option(help: "Notification identifier.")
     var id: String?
 
-    @Option(help: "Dismiss all notifications in this group.")
-    var group: String?
+    @Option(help: "Dismiss all notifications in this thread group.")
+    var thread: String?
 
     @Flag(help: "Dismiss all notifications owned by notifyctl.")
     var all: Bool = false
@@ -34,7 +34,7 @@ struct DismissCommand: AsyncParsableCommand {
             if output.dryRun {
                 let dry = DismissResult(
                     ids: target.id.map { [$0] },
-                    group: target.group,
+                    thread: target.thread,
                     all: target.all,
                     pending: scope.pending,
                     delivered: scope.delivered
@@ -57,12 +57,17 @@ struct DismissCommand: AsyncParsableCommand {
             var removedIDs: [String] = []
             if target.all {
                 service.dismissAll(removePending: scope.pending, removeDelivered: scope.delivered)
-            } else if let group = target.group {
-                removedIDs = await service.dismissGroup(
-                    group,
-                    removePending: scope.pending,
-                    removeDelivered: scope.delivered
-                )
+            } else if let thread = target.thread {
+                let store = LocalStore()
+                let ids = store.findIdsByThread(thread)
+                guard !ids.isEmpty else {
+                    throw NotifyCtlError.notFound(
+                        message: "No notifications found for thread '\(thread)'.",
+                        detail: nil
+                    )
+                }
+                removedIDs = ids
+                service.dismiss(ids: ids, removePending: scope.pending, removeDelivered: scope.delivered)
             } else if let id = target.id {
                 removedIDs = [id]
                 service.dismiss(ids: [id], removePending: scope.pending, removeDelivered: scope.delivered)
@@ -70,7 +75,7 @@ struct DismissCommand: AsyncParsableCommand {
 
             let result = DismissResult(
                 ids: removedIDs.isEmpty ? nil : removedIDs,
-                group: target.group,
+                thread: target.thread,
                 all: target.all,
                 pending: scope.pending,
                 delivered: scope.delivered
@@ -85,7 +90,7 @@ struct DismissCommand: AsyncParsableCommand {
                     json: true
                 )
             } else if !output.quiet {
-                print("dismissed")
+                print("dismissed: \(removedIDs.count) notification(s)")
             }
         } catch let exit as ExitCode {
             throw exit
@@ -113,7 +118,7 @@ struct DismissCommand: AsyncParsableCommand {
 private extension DismissCommand {
     struct DismissTarget {
         let id: String?
-        let group: String?
+        let thread: String?
         let all: Bool
     }
 
@@ -124,20 +129,20 @@ private extension DismissCommand {
 
     func resolveTarget() throws -> DismissTarget {
         let resolvedID = id ?? idArgument
-        let selectedModes = (resolvedID != nil ? 1 : 0) + (group != nil ? 1 : 0) + (all ? 1 : 0)
+        let selectedModes = (resolvedID != nil ? 1 : 0) + (thread != nil ? 1 : 0) + (all ? 1 : 0)
         if selectedModes == 0 {
             throw NotifyCtlError.invalidInput(
                 message: "Dismiss target is required.",
-                detail: "Provide an id, --group, or --all."
+                detail: "Provide an id, --thread, or --all."
             )
         }
         if selectedModes > 1 {
             throw NotifyCtlError.invalidInput(
                 message: "Dismiss options are mutually exclusive.",
-                detail: "Use only one of id, --group, or --all."
+                detail: "Use only one of id, --thread, or --all."
             )
         }
-        return DismissTarget(id: resolvedID, group: group, all: all)
+        return DismissTarget(id: resolvedID, thread: thread, all: all)
     }
 
     func resolveScope() -> DismissScope {
@@ -150,7 +155,7 @@ private extension DismissCommand {
 
 private struct DismissResult: Codable {
     let ids: [String]?
-    let group: String?
+    let thread: String?
     let all: Bool
     let pending: Bool
     let delivered: Bool

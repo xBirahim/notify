@@ -4,6 +4,7 @@ import Foundation
 
 final class NotificationService {
     private let center: UNUserNotificationCenter
+    private let store = LocalStore()
 
     init(center: UNUserNotificationCenter) {
         self.center = center
@@ -63,7 +64,7 @@ final class NotificationService {
         let content = UNMutableNotificationContent()
         content.title = payload.title ?? "notifyctl"
         content.subtitle = payload.subtitle ?? ""
-        content.body = payload.message
+        content.body = payload.body
         content.categoryIdentifier = payload.category ?? ""
 
         if payload.sound == .default {
@@ -72,11 +73,6 @@ final class NotificationService {
 
         var userInfo: [AnyHashable: Any] = payload.userInfo
         userInfo["notifyctl"] = true
-        userInfo["level"] = payload.level.rawValue
-
-        if let group = payload.group {
-            userInfo["group"] = group
-        }
 
         if let url = payload.url {
             userInfo["url"] = url
@@ -84,7 +80,7 @@ final class NotificationService {
 
         content.userInfo = userInfo
 
-        if let thread = payload.thread ?? payload.group {
+        if let thread = payload.thread {
             content.threadIdentifier = thread
         }
 
@@ -94,7 +90,83 @@ final class NotificationService {
             trigger: nil
         )
         try await add(request)
+
+        let now = ISO8601DateFormatter().string(from: Date())
+        let existing = store.getNotification(id: identifier)
+        let record = NotificationRecord(
+            id: identifier,
+            title: content.title,
+            subtitle: content.subtitle,
+            body: content.body,
+            category: payload.category,
+            thread: payload.thread,
+            url: payload.url,
+            createdAt: existing?.createdAt ?? now,
+            updatedAt: existing != nil ? now : nil
+        )
+        try? store.appendNotification(record)
+
         return identifier
+    }
+
+    func registerCategories() {
+        let plain = UNNotificationCategory(
+            identifier: NotifyCategory.plain.rawValue,
+            actions: [],
+            intentIdentifiers: [],
+            options: []
+        )
+
+        let ack = UNNotificationAction(
+            identifier: NotifyAction.acknowledge.rawValue,
+            title: "Acquitter",
+            options: []
+        )
+        let open = UNNotificationAction(
+            identifier: NotifyAction.open.rawValue,
+            title: "Ouvrir",
+            options: .foreground
+        )
+        let silence = UNNotificationAction(
+            identifier: NotifyAction.silence.rawValue,
+            title: "Silence",
+            options: .destructive
+        )
+
+        let alert = UNNotificationCategory(
+            identifier: NotifyCategory.alert.rawValue,
+            actions: [ack, open, silence],
+            intentIdentifiers: [],
+            options: []
+        )
+
+        let retry = UNNotificationAction(
+            identifier: NotifyAction.retry.rawValue,
+            title: "Relancer",
+            options: []
+        )
+
+        let job = UNNotificationCategory(
+            identifier: NotifyCategory.job.rawValue,
+            actions: [ack, retry, open],
+            intentIdentifiers: [],
+            options: []
+        )
+
+        let rollback = UNNotificationAction(
+            identifier: NotifyAction.rollback.rawValue,
+            title: "Rollback",
+            options: .destructive
+        )
+
+        let deploy = UNNotificationCategory(
+            identifier: NotifyCategory.deploy.rawValue,
+            actions: [open, rollback, ack],
+            intentIdentifiers: [],
+            options: []
+        )
+
+        center.setNotificationCategories([plain, alert, job, deploy])
     }
 
     func dismiss(
@@ -120,72 +192,24 @@ final class NotificationService {
             center.removeAllPendingNotificationRequests()
         }
     }
-
-    func dismissGroup(
-        _ group: String,
-        removePending: Bool = true,
-        removeDelivered: Bool = true
-    ) async -> [String] {
-        let lists = await list(includePending: removePending, includeDelivered: removeDelivered, group: group)
-        let deliveredIDs = lists.delivered.map(\.id)
-        let pendingIDs = lists.pending.map(\.id)
-        let ids = Array(Set(deliveredIDs + pendingIDs))
-        dismiss(ids: ids, removePending: removePending, removeDelivered: removeDelivered)
-        return ids
-    }
-
-    func list(
-        includePending: Bool,
-        includeDelivered: Bool,
-        group: String?
-    ) async -> NotificationListData {
-        var delivered: [NotificationRecord] = []
-        var pending: [NotificationRecord] = []
-
-        if includeDelivered {
-            delivered = await deliveredRecords()
-        }
-
-        if includePending {
-            pending = await pendingRecords()
-        }
-
-        if let group {
-            delivered = delivered.filter { $0.group == group }
-            pending = pending.filter { $0.group == group }
-        }
-
-        return NotificationListData(delivered: delivered, pending: pending)
-    }
-
-    func get(id: String) async -> NotificationRecord? {
-        let records = await list(includePending: true, includeDelivered: true, group: nil)
-        if let delivered = records.delivered.first(where: { $0.id == id }) {
-            return delivered
-        }
-        return records.pending.first(where: { $0.id == id })
-    }
 }
 
 private extension NotificationService {
     static func record(id: String, state: String, content: UNNotificationContent) -> NotificationRecord {
-        let level: NotificationLevel?
-        if let raw = content.userInfo["level"] as? String {
-            level = NotificationLevel(rawValue: raw)
-        } else {
-            level = nil
-        }
-
-        let group = content.userInfo["group"] as? String
+        let category = content.categoryIdentifier.isEmpty ? nil : content.categoryIdentifier
+        let thread = content.threadIdentifier.isEmpty ? nil : content.threadIdentifier
+        let url = content.userInfo["url"] as? String
 
         return NotificationRecord(
             id: id,
-            state: state,
             title: content.title,
             subtitle: content.subtitle,
-            message: content.body,
-            level: level,
-            group: group
+            body: content.body,
+            category: category,
+            thread: thread,
+            url: url,
+            createdAt: nil,
+            updatedAt: nil
         )
     }
 
@@ -193,36 +217,6 @@ private extension NotificationService {
         await withCheckedContinuation { continuation in
             center.getNotificationSettings { settings in
                 continuation.resume(returning: settings)
-            }
-        }
-    }
-
-    func deliveredRecords() async -> [NotificationRecord] {
-        await withCheckedContinuation { continuation in
-            center.getDeliveredNotifications { notifications in
-                let records = notifications.map { notification in
-                    Self.record(
-                        id: notification.request.identifier,
-                        state: "delivered",
-                        content: notification.request.content
-                    )
-                }
-                continuation.resume(returning: records)
-            }
-        }
-    }
-
-    func pendingRecords() async -> [NotificationRecord] {
-        await withCheckedContinuation { continuation in
-            center.getPendingNotificationRequests { requests in
-                let records = requests.map { request in
-                    Self.record(
-                        id: request.identifier,
-                        state: "pending",
-                        content: request.content
-                    )
-                }
-                continuation.resume(returning: records)
             }
         }
     }

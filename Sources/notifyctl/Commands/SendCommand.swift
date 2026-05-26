@@ -7,8 +7,8 @@ struct SendCommand: AsyncParsableCommand {
         abstract: "Send a notification."
     )
 
-    @Argument(help: "Notification message.")
-    var messageArgument: String?
+    @Argument(help: "Notification body text.")
+    var bodyArgument: String?
 
     @Option(help: "Notification identifier.")
     var id: String?
@@ -19,29 +19,20 @@ struct SendCommand: AsyncParsableCommand {
     @Option(help: "Notification subtitle.")
     var subtitle: String?
 
-    @Option(help: "Notification message. Overrides positional message.")
-    var message: String?
+    @Option(help: "Notification body. Overrides positional body.")
+    var body: String?
 
-    @Option(help: "Logical notification level.")
-    var level: NotificationLevel = .info
+    @Option(help: "Category: plain, alert, job, deploy.")
+    var category: NotifyCategory?
 
-    @Option(help: "Logical notification group.")
-    var group: String?
-
-    @Option(help: "Thread identifier.")
+    @Option(help: "Thread identifier for macOS grouping.")
     var thread: String?
 
-    @Option(help: "Category identifier.")
-    var category: String?
+    @Option(help: "URL to attach.")
+    var url: String?
 
     @Option(help: "Sound type.")
     var sound: NotificationSound = .default
-
-    @Option(help: "URL to attach in userInfo.")
-    var url: String?
-
-    @Option(parsing: .upToNextOption, help: "Additional userInfo key=value entries.")
-    var userInfo: [String] = []
 
     @OptionGroup var output: OutputOptions
 
@@ -53,9 +44,8 @@ struct SendCommand: AsyncParsableCommand {
             if output.dryRun {
                 let dryResult = SendResult(
                     title: payload.title ?? "notifyctl",
-                    message: payload.message,
-                    level: payload.level,
-                    group: payload.group
+                    body: payload.body,
+                    category: payload.category
                 )
                 if output.json {
                     try CommandOutput.success(
@@ -75,9 +65,8 @@ struct SendCommand: AsyncParsableCommand {
             let deliveredID = try await service.send(payload)
             let result = SendResult(
                 title: payload.title ?? "notifyctl",
-                message: payload.message,
-                level: payload.level,
-                group: payload.group
+                body: payload.body,
+                category: payload.category
             )
 
             if output.json {
@@ -116,11 +105,11 @@ struct SendCommand: AsyncParsableCommand {
 
 private extension SendCommand {
     func buildPayload() throws -> NotificationPayload {
-        let resolvedMessage = (message ?? messageArgument ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        if resolvedMessage.isEmpty {
+        let resolvedBody = (body ?? bodyArgument ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if resolvedBody.isEmpty {
             throw NotifyCtlError.invalidInput(
-                message: "A notification message is required.",
-                detail: "Provide a positional message or --message."
+                message: "A notification body is required.",
+                detail: "Provide a positional body or --body."
             )
         }
 
@@ -128,21 +117,18 @@ private extension SendCommand {
             id: id,
             title: title,
             subtitle: subtitle,
-            message: resolvedMessage,
-            level: level,
-            group: group,
+            body: resolvedBody,
             sound: sound,
             thread: thread,
-            category: category,
+            category: category?.rawValue,
             url: url,
-            userInfo: try UserInfoParser.parse(userInfo)
+            userInfo: [:]
         )
     }
 }
 
 private struct SendResult: Codable {
     let title: String
-    let message: String
-    let level: NotificationLevel
-    let group: String?
+    let body: String
+    let category: String?
 }
