@@ -98,6 +98,7 @@ Send a notification.
 | `--category` | Category: `plain`, `alert`, `job`, `deploy` |
 | `--thread` | Thread identifier for macOS grouping |
 | `--url` | URL to attach |
+| `--user-info` | Add metadata entry as `key=value` (repeatable) |
 | `--sound` | Sound type: `default`, `none` (default: `default`) |
 | `--interruption-level` | Interruption level: `passive`, `active` |
 
@@ -117,6 +118,7 @@ Update a notification by replacing it (same engine as `send`).
 | `--category` | Category: `plain`, `alert`, `job`, `deploy` |
 | `--thread` | Thread identifier |
 | `--url` | URL to attach |
+| `--user-info` | Add metadata entry as `key=value` (repeatable) |
 | `--interruption-level` | Interruption level: `passive`, `active` |
 | `--json` | Machine-readable JSON output |
 | `--quiet` | Suppress non-error output |
@@ -182,7 +184,7 @@ Send a test notification.
 
 Listen for notification action callbacks (long-running process).
 
-This command runs indefinitely and outputs structured JSON events to stdout when the user interacts with notification action buttons. Use `notifyctl agent install` to run it as a background LaunchAgent.
+This command runs until interrupted (`Ctrl+C`, `SIGTERM`, or `SIGINT`) and outputs structured JSON events to stdout when the user interacts with notification action buttons. Use `notifyctl agent install` to run it as a background LaunchAgent.
 
 ### `notifyctl agent`
 
@@ -193,6 +195,7 @@ Manage the background listener LaunchAgent.
 Install and load the LaunchAgent for background notification listening.
 
 Creates `~/Library/LaunchAgents/io.notifyctl.listener.plist` and loads it with `launchctl`.
+Logs are written to `~/Library/Logs/notifyctl/listener.log`.
 
 #### `notifyctl agent uninstall`
 
@@ -207,6 +210,8 @@ Output:
 Plist: installed
 Service: running
 ```
+
+Also supports `--json` for machine-readable status.
 
 ### `notifyctl version`
 
@@ -236,9 +241,9 @@ These options are available on most commands:
 | Category | Buttons |
 |----------|---------|
 | `plain` | Default click only (no custom buttons) |
-| `alert` | Acquitter, Ouvrir, Silence |
-| `job` | Acquitter, Relancer, Ouvrir |
-| `deploy` | Ouvrir, Rollback, Acquitter |
+| `alert` | Acknowledge, Open, Silence |
+| `job` | Acknowledge, Retry, Open |
+| `deploy` | Open, Rollback, Acknowledge |
 
 Run `notifyctl listen` or `notifyctl agent install` to receive action callbacks as structured JSON events.
 

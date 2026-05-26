@@ -20,6 +20,15 @@ final class NotifyCtlTests: XCTestCase {
         }
     }
 
+    func testUserInfoParserRejectsEmptyKey() {
+        XCTAssertThrowsError(try UserInfoParser.parse(["=value"])) { error in
+            guard case NotifyCtlError.invalidInput = error else {
+                XCTFail("Expected invalidInput error, got \(error)")
+                return
+            }
+        }
+    }
+
     func testResultEnvelopeRoundTrip() throws {
         let envelope = ResultEnvelope(
             id: "build-123",
@@ -49,9 +58,61 @@ final class NotifyCtlTests: XCTestCase {
         XCTAssertEqual(error.payload.code, "permission_denied")
         XCTAssertEqual(error.payload.message, "Notifications are denied.")
     }
+
+    func testLocalStoreFallsBackWhenApplicationSupportUnavailable() {
+        let home = URL(fileURLWithPath: "/tmp/notifyctl-tests-\(UUID().uuidString)", isDirectory: true)
+        let fileManager = FallbackFileManager(home: home)
+
+        let store = LocalStore(fileManager: fileManager)
+
+        XCTAssertEqual(
+            store.notificationsURL.path,
+            home.appendingPathComponent(".local/share/notifyctl/notifications.jsonl").path
+        )
+        XCTAssertEqual(
+            store.actionsURL.path,
+            home.appendingPathComponent(".local/share/notifyctl/actions.jsonl").path
+        )
+        XCTAssertEqual(
+            fileManager.createdDirectory?.path,
+            home.appendingPathComponent(".local/share/notifyctl").path
+        )
+    }
 }
 
 private struct EnvelopeData: Codable, Equatable {
     let message: String
+}
+
+private final class FallbackFileManager: FileManager, @unchecked Sendable {
+    private let home: URL
+    var createdDirectory: URL?
+
+    init(home: URL) {
+        self.home = home
+        super.init()
+    }
+
+    override var homeDirectoryForCurrentUser: URL {
+        home
+    }
+
+    override func urls(
+        for directory: FileManager.SearchPathDirectory,
+        in domainMask: FileManager.SearchPathDomainMask
+    ) -> [URL] {
+        if directory == .applicationSupportDirectory && domainMask == .userDomainMask {
+            return []
+        }
+        return super.urls(for: directory, in: domainMask)
+    }
+
+    override func createDirectory(
+        at url: URL,
+        withIntermediateDirectories createIntermediates: Bool,
+        attributes: [FileAttributeKey: Any]? = nil
+    ) throws {
+        createdDirectory = url
+    }
 }
 #endif
