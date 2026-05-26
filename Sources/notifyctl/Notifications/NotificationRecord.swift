@@ -1,11 +1,19 @@
 struct NotificationRecord: Codable {
     let id: String
-    let state: String
     let title: String
     let subtitle: String
-    let message: String
-    let level: NotificationLevel?
-    let group: String?
+    let body: String
+    let category: String?
+    let thread: String?
+    let url: String?
+    let createdAt: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, subtitle, body, category, thread, url
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
 }
 
 struct NotificationListData: Codable {
