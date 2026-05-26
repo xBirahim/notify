@@ -1,10 +1,10 @@
 import ArgumentParser
 
 enum NotifyCategory: String, Codable, ExpressibleByArgument {
-    case plain = "PLAIN"
-    case alert = "ALERT"
-    case job = "JOB"
-    case deploy = "DEPLOY"
+    case plain = "plain"
+    case alert = "alert"
+    case job = "job"
+    case deploy = "deploy"
 }
 
 enum NotifyAction: String {
