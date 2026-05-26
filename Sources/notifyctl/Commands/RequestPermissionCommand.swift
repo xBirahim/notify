@@ -1,3 +1,4 @@
+import AppKit
 import ArgumentParser
 @preconcurrency import UserNotifications
 
@@ -22,7 +23,17 @@ struct RequestPermissionCommand: AsyncParsableCommand {
     @Flag(help: "Request critical alert permission.")
     var critical: Bool = false
 
+    @Flag(help: .hidden)
+    var relaunched: Bool = false
+
     mutating func run() async throws {
+        if relaunched {
+            await MainActor.run {
+                if let policy = NSApplication.ActivationPolicy(rawValue: 3) {
+                    NSApplication.shared.setActivationPolicy(policy)
+                }
+            }
+        }
         do {
             let service = try NotificationService.makeDefault()
             var options: UNAuthorizationOptions = [.alert]
@@ -56,6 +67,34 @@ struct RequestPermissionCommand: AsyncParsableCommand {
             if !granted {
                 throw ExitCode(.permissionDenied)
             }
+        } catch let error as NSError where error.domain == UNErrorDomain && error.code == 1 {
+            guard !relaunched else {
+                try CommandOutput.failure(
+                    command: "request-permission",
+                    error: .systemError(
+                        message: "Cannot request permissions from command line.",
+                        detail: "Go to System Settings -> Notifications to enable notifications for NotifyCtl."
+                    ),
+                    json: output.json
+                )
+            }
+            if !output.quiet {
+                print("Opening System Settings and relaunching to request permission...")
+            }
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
+                NSWorkspace.shared.open(url)
+            }
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+            task.arguments = [
+                Bundle.main.bundleURL.path,
+                "--args", "request-permission", "--relaunched"
+            ]
+            try task.run()
+            if !output.quiet {
+                print("A permission dialog should appear shortly. Grant access to enable notifications.")
+            }
+            throw ExitCode(.success)
         } catch let exit as ExitCode {
             throw exit
         } catch let error as NotifyCtlError {
