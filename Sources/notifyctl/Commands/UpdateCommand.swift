@@ -33,12 +33,16 @@ struct UpdateCommand: AsyncParsableCommand {
     @Option(help: "Sound type.")
     var sound: NotificationSound = .default
 
+    @Option(help: "Additional user-info entry as key=value. Repeat for multiple entries.")
+    var userInfo: [String] = []
+
     @OptionGroup var output: OutputOptions
 
     mutating func run() async throws {
         do {
             let service = try NotificationService.makeDefault()
             let existing = LocalStore().getNotification(id: id)
+            let parsedUserInfo = try UserInfoParser.parse(userInfo)
 
             let payload = NotificationPayload(
                 id: id,
@@ -50,7 +54,7 @@ struct UpdateCommand: AsyncParsableCommand {
                 category: category?.rawValue ?? existing?.category,
                 url: url ?? existing?.url,
                 interruptionLevel: interruptionLevel,
-                userInfo: [:]
+                userInfo: parsedUserInfo
             )
 
             if output.dryRun {

@@ -37,6 +37,9 @@ struct SendCommand: AsyncParsableCommand {
     @Option(help: "Interruption level: passive, active.")
     var interruptionLevel: InterruptionLevel?
 
+    @Option(help: "Additional user-info entry as key=value. Repeat for multiple entries.")
+    var userInfo: [String] = []
+
     @OptionGroup var output: OutputOptions
 
     mutating func run() async throws {
@@ -118,6 +121,8 @@ private extension SendCommand {
             )
         }
 
+        let parsedUserInfo = try UserInfoParser.parse(userInfo)
+
         return NotificationPayload(
             id: id,
             title: title,
@@ -128,7 +133,7 @@ private extension SendCommand {
             category: category?.rawValue,
             url: url,
             interruptionLevel: interruptionLevel,
-            userInfo: [:]
+            userInfo: parsedUserInfo
         )
     }
 }
