@@ -69,6 +69,7 @@ struct SendCommand: AsyncParsableCommand {
             }
 
             let service = try NotificationService.makeDefault()
+            service.registerCategories()
             let deliveredID = try await service.send(payload)
             let result = SendResult(
                 title: payload.title ?? "notifyctl",
