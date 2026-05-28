@@ -25,8 +25,8 @@ struct AgentInstallCommand: ParsableCommand {
         do {
             let plistURL = launchAgentURL()
             let logURL = listenerLogURL()
-            let label = "io.notifyctl.listener"
-            let executablePath = Bundle.main.executablePath ?? "/usr/local/bin/notifyctl"
+            let label = "io.notify.listener"
+            let executablePath = Bundle.main.executablePath ?? "/usr/local/bin/notify"
 
             if output.dryRun {
                 let result = AgentInstallResult(
@@ -74,7 +74,7 @@ struct AgentInstallCommand: ParsableCommand {
                 arguments: ["load", plistURL.path]
             )
             if statusCode != 0 {
-                throw NotifyCtlError.systemError(
+                throw NotifyError.systemError(
                     message: "Failed to load LaunchAgent.",
                     detail: stderr.isEmpty
                         ? "launchctl exited with code \(statusCode)"
@@ -100,7 +100,7 @@ struct AgentInstallCommand: ParsableCommand {
             }
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(command: "agent.install", error: error, json: output.json)
         } catch {
             try CommandOutput.failure(
@@ -150,7 +150,7 @@ struct AgentUninstallCommand: ParsableCommand {
                     arguments: ["unload", plistURL.path]
                 )
                 if statusCode != 0 {
-                    throw NotifyCtlError.systemError(
+                    throw NotifyError.systemError(
                         message: "Failed to unload LaunchAgent.",
                         detail: stderr.isEmpty
                             ? "launchctl exited with code \(statusCode)"
@@ -188,7 +188,7 @@ struct AgentUninstallCommand: ParsableCommand {
             }
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(command: "agent.uninstall", error: error, json: output.json)
         } catch {
             try CommandOutput.failure(
@@ -214,7 +214,7 @@ struct AgentStatusCommand: ParsableCommand {
     mutating func run() throws {
         do {
             let plistURL = launchAgentURL()
-            let label = "io.notifyctl.listener"
+            let label = "io.notify.listener"
             let installed = FileManager.default.fileExists(atPath: plistURL.path)
             let logURL = listenerLogURL()
 
@@ -256,7 +256,7 @@ struct AgentStatusCommand: ParsableCommand {
             print("Service: \(serviceState.displayValue)")
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(command: "agent.status", error: error, json: output.json)
         } catch {
             try CommandOutput.failure(
@@ -273,12 +273,12 @@ struct AgentStatusCommand: ParsableCommand {
 
 private func launchAgentURL() -> URL {
     FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Library/LaunchAgents/io.notifyctl.listener.plist")
+        .appendingPathComponent("Library/LaunchAgents/io.notify.listener.plist")
 }
 
 private func listenerLogURL() -> URL {
     FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Library/Logs/notifyctl/listener.log")
+        .appendingPathComponent("Library/Logs/notify/listener.log")
 }
 
 private func runProcess(

@@ -4,15 +4,15 @@ import Foundation
 struct VersionCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "version",
-        abstract: "Print notifyctl version."
+        abstract: "Print notify version."
     )
 
     @OptionGroup var output: OutputOptions
 
     mutating func run() throws {
         let data = VersionData(
-            name: "notifyctl",
-            version: NotifyCtl.appVersion,
+            name: "notify",
+            version: Notify.appVersion,
             swift: swiftVersion(),
             platform: "macOS"
         )
@@ -26,7 +26,7 @@ struct VersionCommand: ParsableCommand {
             return
         }
 
-        print("notifyctl \(data.version)")
+        print("notify \(data.version)")
     }
 }
 

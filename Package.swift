@@ -3,26 +3,26 @@
 import PackageDescription
 
 let package = Package(
-    name: "notifyctl",
+    name: "notify",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "notifyctl", targets: ["notifyctl"])
+        .executable(name: "notify", targets: ["notify"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0")
     ],
     targets: [
         .executableTarget(
-            name: "notifyctl",
+            name: "notify",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
         .testTarget(
-            name: "notifyctlTests",
-            dependencies: ["notifyctl"]
+            name: "notifyTests",
+            dependencies: ["notify"]
         )
     ],
     swiftLanguageModes: [.v6]

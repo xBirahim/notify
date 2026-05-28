@@ -31,7 +31,7 @@ enum CommandOutput {
     static func failure(
         command: String,
         id: String? = nil,
-        error: NotifyCtlError,
+        error: NotifyError,
         json: Bool
     ) throws -> Never {
         if json {

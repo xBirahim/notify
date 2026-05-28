@@ -13,12 +13,12 @@ struct TestCommand: AsyncParsableCommand {
 
     mutating func run() async throws {
         let payload = NotificationPayload(
-            id: "notifyctl-test",
-            title: "notifyctl",
+            id: "notify-test",
+            title: "notify",
             subtitle: nil,
             body: "Notification test",
             sound: .default,
-            thread: "notifyctl",
+            thread: "notify",
             category: nil,
             url: nil,
             interruptionLevel: interruptionLevel,
@@ -56,7 +56,7 @@ struct TestCommand: AsyncParsableCommand {
             }
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(command: "test", id: payload.id, error: error, json: output.json)
         } catch {
             try CommandOutput.failure(

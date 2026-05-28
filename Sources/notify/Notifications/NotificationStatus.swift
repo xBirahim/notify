@@ -9,7 +9,7 @@ struct NotificationStatus: Codable {
 
 extension NotificationStatus {
     init(settings: UNNotificationSettings) {
-        authorization = settings.authorizationStatus.notifyctlValue
+        authorization = settings.authorizationStatus.notifyValue
         alerts = settings.alertSetting == .enabled
         sounds = settings.soundSetting == .enabled
         badges = settings.badgeSetting == .enabled
@@ -17,7 +17,7 @@ extension NotificationStatus {
 }
 
 extension UNAuthorizationStatus {
-    var notifyctlValue: String {
+    var notifyValue: String {
         switch self {
         case .notDetermined:
             return "notDetermined"

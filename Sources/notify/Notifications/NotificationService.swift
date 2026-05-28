@@ -14,9 +14,9 @@ final class NotificationService {
         let bundlePath = Bundle.main.bundlePath
         let isAppBundle = bundlePath.hasSuffix(".app")
         if !isAppBundle {
-            throw NotifyCtlError.systemError(
+            throw NotifyError.systemError(
                 message: "UserNotifications requires a macOS .app bundle.",
-                detail: "Install notifyctl with: make install"
+                detail: "Install notify with: make install"
             )
         }
         LSRegisterURL(Bundle.main.bundleURL as CFURL, true)
@@ -40,17 +40,17 @@ final class NotificationService {
         case .notDetermined:
             let granted = try? await requestAuthorization(options: .provisional)
             if granted == true { return }
-            throw NotifyCtlError.permissionDenied(
+            throw NotifyError.permissionDenied(
                 message: "Notifications are not authorized.",
-                detail: "Run notifyctl request-permission to open System Settings."
+                detail: "Run notify request-permission to open System Settings."
             )
         case .denied:
-            throw NotifyCtlError.permissionDenied(
+            throw NotifyError.permissionDenied(
                 message: "Notifications are denied in macOS settings.",
-                detail: "Enable notifications for notifyctl in System Settings -> Notifications."
+                detail: "Enable notifications for notify in System Settings -> Notifications."
             )
         @unknown default:
-            throw NotifyCtlError.systemError(
+            throw NotifyError.systemError(
                 message: "Unknown notification authorization status.",
                 detail: nil
             )
@@ -62,7 +62,7 @@ final class NotificationService {
 
         let identifier = payload.id ?? UUID().uuidString
         let content = UNMutableNotificationContent()
-        content.title = payload.title ?? "notifyctl"
+        content.title = payload.title ?? "notify"
         content.subtitle = payload.subtitle ?? ""
         content.body = payload.body
         content.categoryIdentifier = payload.category ?? ""
@@ -72,7 +72,7 @@ final class NotificationService {
         }
 
         var userInfo: [AnyHashable: Any] = payload.userInfo
-        userInfo["notifyctl"] = true
+        userInfo["notify"] = true
 
         if let url = payload.url {
             userInfo["url"] = url
@@ -111,7 +111,7 @@ final class NotificationService {
         do {
             try store.appendNotification(record)
         } catch {
-            throw NotifyCtlError.systemError(
+            throw NotifyError.systemError(
                 message: "Notification delivered but failed to persist local record.",
                 detail: String(describing: error)
             )

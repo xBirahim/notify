@@ -1,9 +1,9 @@
 #if canImport(XCTest)
 import Foundation
 import XCTest
-@testable import notifyctl
+@testable import notify
 
-final class NotifyCtlTests: XCTestCase {
+final class NotifyTests: XCTestCase {
     func testUserInfoParserParsesPairs() throws {
         let parsed = try UserInfoParser.parse(["env=prod", "build = 42", "empty="])
         XCTAssertEqual(parsed["env"], "prod")
@@ -13,7 +13,7 @@ final class NotifyCtlTests: XCTestCase {
 
     func testUserInfoParserRejectsInvalidPairs() {
         XCTAssertThrowsError(try UserInfoParser.parse(["missing-delimiter"])) { error in
-            guard case NotifyCtlError.invalidInput = error else {
+            guard case NotifyError.invalidInput = error else {
                 XCTFail("Expected invalidInput error, got \(error)")
                 return
             }
@@ -22,7 +22,7 @@ final class NotifyCtlTests: XCTestCase {
 
     func testUserInfoParserRejectsEmptyKey() {
         XCTAssertThrowsError(try UserInfoParser.parse(["=value"])) { error in
-            guard case NotifyCtlError.invalidInput = error else {
+            guard case NotifyError.invalidInput = error else {
                 XCTFail("Expected invalidInput error, got \(error)")
                 return
             }
@@ -48,8 +48,8 @@ final class NotifyCtlTests: XCTestCase {
         XCTAssertNil(decoded.error)
     }
 
-    func testNotifyCtlErrorMapsExitCodeAndPayload() {
-        let error = NotifyCtlError.permissionDenied(
+    func testNotifyErrorMapsExitCodeAndPayload() {
+        let error = NotifyError.permissionDenied(
             message: "Notifications are denied.",
             detail: "Enable notifications in macOS Settings."
         )
@@ -60,22 +60,22 @@ final class NotifyCtlTests: XCTestCase {
     }
 
     func testLocalStoreFallsBackWhenApplicationSupportUnavailable() {
-        let home = URL(fileURLWithPath: "/tmp/notifyctl-tests-\(UUID().uuidString)", isDirectory: true)
+        let home = URL(fileURLWithPath: "/tmp/notify-tests-\(UUID().uuidString)", isDirectory: true)
         let fileManager = FallbackFileManager(home: home)
 
         let store = LocalStore(fileManager: fileManager)
 
         XCTAssertEqual(
             store.notificationsURL.path,
-            home.appendingPathComponent(".local/share/notifyctl/notifications.jsonl").path
+            home.appendingPathComponent(".local/share/notify/notifications.jsonl").path
         )
         XCTAssertEqual(
             store.actionsURL.path,
-            home.appendingPathComponent(".local/share/notifyctl/actions.jsonl").path
+            home.appendingPathComponent(".local/share/notify/actions.jsonl").path
         )
         XCTAssertEqual(
             fileManager.createdDirectory?.path,
-            home.appendingPathComponent(".local/share/notifyctl").path
+            home.appendingPathComponent(".local/share/notify").path
         )
     }
 }

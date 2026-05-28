@@ -49,7 +49,7 @@ struct SendCommand: AsyncParsableCommand {
 
             if output.dryRun {
                 let dryResult = SendResult(
-                    title: payload.title ?? "notifyctl",
+                    title: payload.title ?? "notify",
                     body: payload.body,
                     category: payload.category,
                     interruptionLevel: payload.interruptionLevel?.rawValue
@@ -72,7 +72,7 @@ struct SendCommand: AsyncParsableCommand {
             service.registerCategories()
             let deliveredID = try await service.send(payload)
             let result = SendResult(
-                title: payload.title ?? "notifyctl",
+                title: payload.title ?? "notify",
                 body: payload.body,
                 category: payload.category,
                 interruptionLevel: payload.interruptionLevel?.rawValue
@@ -91,7 +91,7 @@ struct SendCommand: AsyncParsableCommand {
             }
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(
                 command: "send",
                 id: id,
@@ -116,7 +116,7 @@ private extension SendCommand {
     func buildPayload() throws -> NotificationPayload {
         let resolvedBody = (body ?? bodyArgument ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if resolvedBody.isEmpty {
-            throw NotifyCtlError.invalidInput(
+            throw NotifyError.invalidInput(
                 message: "A notification body is required.",
                 detail: "Provide a positional body or --body."
             )

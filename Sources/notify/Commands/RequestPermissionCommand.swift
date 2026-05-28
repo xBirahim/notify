@@ -73,7 +73,7 @@ struct RequestPermissionCommand: AsyncParsableCommand {
                     command: "request-permission",
                     error: .systemError(
                         message: "Cannot request permissions from command line.",
-                        detail: "Go to System Settings -> Notifications to enable notifications for NotifyCtl."
+                        detail: "Go to System Settings -> Notifications to enable notifications for Notify."
                     ),
                     json: output.json
                 )
@@ -97,7 +97,7 @@ struct RequestPermissionCommand: AsyncParsableCommand {
             throw ExitCode(.success)
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(
                 command: "request-permission",
                 error: error,

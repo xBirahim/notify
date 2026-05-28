@@ -1,13 +1,13 @@
 import Foundation
 
-enum NotifyCtlError: Error {
+enum NotifyError: Error {
     case invalidInput(message: String, detail: String? = nil)
     case permissionDenied(message: String, detail: String? = nil)
     case notFound(message: String, detail: String? = nil)
     case systemError(message: String, detail: String? = nil)
 }
 
-extension NotifyCtlError {
+extension NotifyError {
     var exitCode: NotifyExitCode {
         switch self {
         case .invalidInput:

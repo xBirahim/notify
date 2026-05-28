@@ -5,7 +5,7 @@ enum UserInfoParser {
         var output: [String: String] = [:]
         for pair in pairs {
             guard let delimiter = pair.firstIndex(of: "=") else {
-                throw NotifyCtlError.invalidInput(
+                throw NotifyError.invalidInput(
                     message: "Invalid --user-info entry.",
                     detail: "Expected key=value, got '\(pair)'."
                 )
@@ -16,7 +16,7 @@ enum UserInfoParser {
             let value = String(pair[valueStart...]).trimmingCharacters(in: .whitespacesAndNewlines)
 
             if key.isEmpty {
-                throw NotifyCtlError.invalidInput(
+                throw NotifyError.invalidInput(
                     message: "Invalid --user-info entry.",
                     detail: "Key cannot be empty."
                 )

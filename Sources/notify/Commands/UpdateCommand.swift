@@ -89,7 +89,7 @@ struct UpdateCommand: AsyncParsableCommand {
             }
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(command: "update", id: id, error: error, json: output.json)
         } catch {
             try CommandOutput.failure(

@@ -1,4 +1,4 @@
-# notifyctl
+# notify
 
 ![Swift 6.0](https://img.shields.io/badge/Swift-6.0-orange.svg)
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-blue.svg)
@@ -7,7 +7,7 @@
 
 ---
 
-`notifyctl` is a macOS CLI to send and manage native macOS notifications with stable, scriptable output, action categories, and a local event store.
+`notify` is a macOS CLI to send and manage native macOS notifications with stable, scriptable output, action categories, and a local event store.
 
 - **Scriptable** — JSON output for easy integration with shell scripts, CI pipelines, and monitoring tools
 - **Actionable** — Rich notification categories with custom buttons
@@ -28,17 +28,17 @@
 ### From source
 
 ```bash
-git clone https://github.com/your-org/notifyctl.git
-cd notifyctl
+git clone https://github.com/your-org/notify.git
+cd notify
 make install
 export PATH="$HOME/.local/bin:$PATH"
-notifyctl version
+notify version
 ```
 
 This creates:
 
-- `~/.local/share/NotifyCtl.app` — bundled executable with app identity (required by `UNUserNotificationCenter`)
-- `~/.local/bin/notifyctl` — launcher script
+- `~/.local/share/Notify.app` — bundled executable with app identity (required by `UNUserNotificationCenter`)
+- `~/.local/bin/notify` — launcher script
 
 Make sure `~/.local/bin` is in your `PATH`:
 
@@ -50,7 +50,7 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 
 ```bash
 swift build -c release
-cp .build/release/notifyctl /usr/local/bin/
+cp .build/release/notify /usr/local/bin/
 ```
 
 > **Note:** Running the binary directly without the app bundle may cause permission prompts to fail, as `UNUserNotificationCenter` requires a bundle identity. Use `make install` whenever possible.
@@ -59,7 +59,7 @@ cp .build/release/notifyctl /usr/local/bin/
 
 ## Commands
 
-### `notifyctl status`
+### `notify status`
 
 Show macOS notification permission state.
 
@@ -68,7 +68,7 @@ Show macOS notification permission state.
 | `--json` | | Machine-readable JSON output |
 | `--quiet` | | Suppress non-error output |
 
-### `notifyctl request-permission`
+### `notify request-permission`
 
 Request macOS notification authorization.
 
@@ -81,7 +81,7 @@ Request macOS notification authorization.
 | `--json` | | Machine-readable JSON output |
 | `--quiet` | | Suppress non-error output |
 
-### `notifyctl send`
+### `notify send`
 
 Send a notification.
 
@@ -102,7 +102,7 @@ Send a notification.
 | `--sound` | Sound type: `default`, `none` (default: `default`) |
 | `--interruption-level` | Interruption level: `passive`, `active` |
 
-### `notifyctl update`
+### `notify update`
 
 Update a notification by replacing it (same engine as `send`).
 
@@ -124,7 +124,7 @@ Update a notification by replacing it (same engine as `send`).
 | `--quiet` | Suppress non-error output |
 | `--dry-run` | Validate input without sending |
 
-### `notifyctl dismiss`
+### `notify dismiss`
 
 Dismiss pending and/or delivered notifications.
 
@@ -136,7 +136,7 @@ Dismiss pending and/or delivered notifications.
 |--------|-------------|
 | `--id` | Notification identifier |
 | `--thread` | Dismiss all notifications in this thread group |
-| `--all` | Dismiss all notifications owned by notifyctl |
+| `--all` | Dismiss all notifications owned by notify |
 | `--pending` | Dismiss pending (undelivered) notifications |
 | `--delivered` | Dismiss delivered notifications |
 | `--json` | Machine-readable JSON output |
@@ -146,7 +146,7 @@ Dismiss pending and/or delivered notifications.
 > `--id`, `--thread`, and `--all` are mutually exclusive.
 > By default (without `--pending` or `--delivered`), both pending and delivered notifications are dismissed.
 
-### `notifyctl list`
+### `notify list`
 
 List notifications from the local store.
 
@@ -156,7 +156,7 @@ List notifications from the local store.
 | `--json` | Machine-readable JSON output |
 | `--quiet` | Suppress non-error output |
 
-### `notifyctl get`
+### `notify get`
 
 Get one notification by identifier from the local store.
 
@@ -169,7 +169,7 @@ Get one notification by identifier from the local store.
 | `--json` | Machine-readable JSON output |
 | `--quiet` | Suppress non-error output |
 
-### `notifyctl test`
+### `notify test`
 
 Send a test notification.
 
@@ -180,28 +180,28 @@ Send a test notification.
 | `--quiet` | Suppress non-error output |
 | `--dry-run` | Validate input without sending |
 
-### `notifyctl listen`
+### `notify listen`
 
 Listen for notification action callbacks (long-running process).
 
-This command runs until interrupted (`Ctrl+C`, `SIGTERM`, or `SIGINT`) and outputs structured JSON events to stdout when the user interacts with notification action buttons. Use `notifyctl agent install` to run it as a background LaunchAgent.
+This command runs until interrupted (`Ctrl+C`, `SIGTERM`, or `SIGINT`) and outputs structured JSON events to stdout when the user interacts with notification action buttons. Use `notify agent install` to run it as a background LaunchAgent.
 
-### `notifyctl agent`
+### `notify agent`
 
 Manage the background listener LaunchAgent.
 
-#### `notifyctl agent install`
+#### `notify agent install`
 
 Install and load the LaunchAgent for background notification listening.
 
-Creates `~/Library/LaunchAgents/io.notifyctl.listener.plist` and loads it with `launchctl`.
-Logs are written to `~/Library/Logs/notifyctl/listener.log`.
+Creates `~/Library/LaunchAgents/io.notify.listener.plist` and loads it with `launchctl`.
+Logs are written to `~/Library/Logs/notify/listener.log`.
 
-#### `notifyctl agent uninstall`
+#### `notify agent uninstall`
 
 Unload and remove the LaunchAgent.
 
-#### `notifyctl agent status`
+#### `notify agent status`
 
 Check if the listener LaunchAgent is installed and running.
 
@@ -213,9 +213,9 @@ Service: running
 
 Also supports `--json` for machine-readable status.
 
-### `notifyctl version`
+### `notify version`
 
-Print the notifyctl version.
+Print the notify version.
 
 | Option | Description |
 |--------|-------------|
@@ -245,9 +245,9 @@ These options are available on most commands:
 | `job` | Acknowledge, Retry, Open |
 | `deploy` | Open, Rollback, Acknowledge |
 
-Run `notifyctl listen` or `notifyctl agent install` to receive action callbacks as structured JSON events.
+Run `notify listen` or `notify agent install` to receive action callbacks as structured JSON events.
 
-Action events are written to `~/Library/Application\ Support/notifyctl/actions.jsonl`.
+Action events are written to `~/Library/Application\ Support/notify/actions.jsonl`.
 
 ---
 
@@ -256,8 +256,8 @@ Action events are written to `~/Library/Application\ Support/notifyctl/actions.j
 Notifications and actions are persisted to JSONL files:
 
 ```
-~/Library/Application Support/notifyctl/notifications.jsonl
-~/Library/Application Support/notifyctl/actions.jsonl
+~/Library/Application Support/notify/notifications.jsonl
+~/Library/Application Support/notify/actions.jsonl
 ```
 
 - Each line is a JSON object representing a notification or action event
@@ -287,22 +287,22 @@ Notifications and actions are persisted to JSONL files:
 
 ```bash
 # Check current permission state
-notifyctl status
-notifyctl status --json
+notify status
+notify status --json
 
 # Request notification authorization
-notifyctl request-permission
-notifyctl request-permission --sound --badge --json
+notify request-permission
+notify request-permission --sound --badge --json
 ```
 
 ### Sending notifications
 
 ```bash
 # Simple notification
-notifyctl send "Hello from the CLI!"
+notify send "Hello from the CLI!"
 
 # With all options
-notifyctl send \
+notify send \
   --id deploy-api-prod \
   --title "Déploiement" \
   --subtitle "Backend API" \
@@ -315,14 +315,14 @@ notifyctl send \
   --json
 
 # Dry run (validate without sending)
-notifyctl send "Test" --dry-run --json
+notify send "Test" --dry-run --json
 ```
 
 ### Updating notifications
 
 ```bash
 # Update an existing notification by its ID
-notifyctl update deploy-api-prod \
+notify update deploy-api-prod \
   --title "Déploiement terminé" \
   --body "OK en 3m42s"
 ```
@@ -331,54 +331,54 @@ notifyctl update deploy-api-prod \
 
 ```bash
 # By ID
-notifyctl dismiss deploy-api-prod
+notify dismiss deploy-api-prod
 
 # By thread group
-notifyctl dismiss --thread deploy-api-prod
+notify dismiss --thread deploy-api-prod
 
 # Dismiss all
-notifyctl dismiss --all
+notify dismiss --all
 
 # Scope to pending or delivered only
-notifyctl dismiss --all --pending
-notifyctl dismiss --all --delivered
+notify dismiss --all --pending
+notify dismiss --all --delivered
 ```
 
 ### Listing and inspecting
 
 ```bash
 # List all notifications from the local store
-notifyctl list
-notifyctl list --json
+notify list
+notify list --json
 
 # Filter by thread
-notifyctl list --thread deploy-api-prod
+notify list --thread deploy-api-prod
 
 # Get a single notification
-notifyctl get deploy-api-prod --json
+notify get deploy-api-prod --json
 ```
 
 ### Background listener
 
 ```bash
 # Run listener in foreground (for testing)
-notifyctl listen
+notify listen
 
 # Install as a background LaunchAgent
-notifyctl agent install
+notify agent install
 
 # Check status
-notifyctl agent status
+notify agent status
 
 # Remove
-notifyctl agent uninstall
+notify agent uninstall
 ```
 
 ### Test notification
 
 ```bash
 # Quick smoke test
-notifyctl test
+notify test
 
 ```
 
@@ -387,23 +387,23 @@ notifyctl test
 
 ```bash
 # Send and capture the notification ID
-ID=$(notifyctl send "Deploy started" --id deploy-web --json | jq -r '.id')
+ID=$(notify send "Deploy started" --id deploy-web --json | jq -r '.id')
 
 # Update later
-notifyctl update "$ID" --body "Deploy finished"
+notify update "$ID" --body "Deploy finished"
 
 # Get the stored record
-notifyctl get "$ID" --json | jq '.data'
+notify get "$ID" --json | jq '.data'
 ```
 
 ---
 
 ## Notes
 
-- `notifyctl` can only access notifications created by the same app identity (NotifyCtl.app bundle).
+- `notify` can only access notifications created by the same app identity (Notify.app bundle).
 - `send` and `update` use the same `UNNotificationRequest` engine — sending with an existing identifier replaces the notification.
 - Notifications require an active macOS user session. Behavior may be limited from headless/SSH/daemon contexts.
-- The listener (`notifyctl listen`) must have its app bundle in focus or be run via the LaunchAgent to receive action callbacks.
+- The listener (`notify listen`) must have its app bundle in focus or be run via the LaunchAgent to receive action callbacks.
 
 ---
 
@@ -427,14 +427,14 @@ make install
 
 ```
 Sources/
-  notifyctl/
-    NotifyCtl.swift           # Entry point & command configuration
+  notify/
+    Notify.swift           # Entry point & command configuration
     Commands/                 # CLI command implementations
     Notifications/            # Notification service, payload, store
     Support/                  # Utilities: output, errors, exit codes
     Schemas/                  # (reserved for future JSON schemas)
 Tests/
-  notifyctlTests/             # Unit tests
+  notifyTests/             # Unit tests
 ```
 
 ---

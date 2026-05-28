@@ -35,7 +35,7 @@ struct StatusCommand: AsyncParsableCommand {
 
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(command: "status", error: error, json: output.json)
         } catch {
             try CommandOutput.failure(

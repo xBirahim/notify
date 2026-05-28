@@ -15,7 +15,7 @@ struct DismissCommand: AsyncParsableCommand {
     @Option(help: "Dismiss all notifications in this thread group.")
     var thread: String?
 
-    @Flag(help: "Dismiss all notifications owned by notifyctl.")
+    @Flag(help: "Dismiss all notifications owned by notify.")
     var all: Bool = false
 
     @Flag(help: "Dismiss pending notifications.")
@@ -61,7 +61,7 @@ struct DismissCommand: AsyncParsableCommand {
                 let store = LocalStore()
                 let ids = store.findIdsByThread(thread)
                 guard !ids.isEmpty else {
-                    throw NotifyCtlError.notFound(
+                    throw NotifyError.notFound(
                         message: "No notifications found for thread '\(thread)'.",
                         detail: nil
                     )
@@ -94,7 +94,7 @@ struct DismissCommand: AsyncParsableCommand {
             }
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(
                 command: "dismiss",
                 id: id ?? idArgument,
@@ -131,13 +131,13 @@ private extension DismissCommand {
         let resolvedID = id ?? idArgument
         let selectedModes = (resolvedID != nil ? 1 : 0) + (thread != nil ? 1 : 0) + (all ? 1 : 0)
         if selectedModes == 0 {
-            throw NotifyCtlError.invalidInput(
+            throw NotifyError.invalidInput(
                 message: "Dismiss target is required.",
                 detail: "Provide an id, --thread, or --all."
             )
         }
         if selectedModes > 1 {
-            throw NotifyCtlError.invalidInput(
+            throw NotifyError.invalidInput(
                 message: "Dismiss options are mutually exclusive.",
                 detail: "Use only one of id, --thread, or --all."
             )

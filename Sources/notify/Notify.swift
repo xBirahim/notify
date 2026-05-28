@@ -4,11 +4,11 @@ import Foundation
 @preconcurrency import UserNotifications
 
 @main
-struct NotifyCtl: AsyncParsableCommand {
+struct Notify: AsyncParsableCommand {
     static let appVersion = "0.2.0"
 
     static let configuration = CommandConfiguration(
-        commandName: "notifyctl",
+        commandName: "notify",
         abstract: "Send and manage native macOS notifications.",
         version: appVersion,
         subcommands: [

@@ -15,7 +15,7 @@ struct GetCommand: AsyncParsableCommand {
         do {
             let store = LocalStore()
             guard let record = store.getNotification(id: id) else {
-                throw NotifyCtlError.notFound(
+                throw NotifyError.notFound(
                     message: "Notification not found.",
                     detail: nil
                 )
@@ -36,7 +36,7 @@ struct GetCommand: AsyncParsableCommand {
             }
         } catch let exit as ExitCode {
             throw exit
-        } catch let error as NotifyCtlError {
+        } catch let error as NotifyError {
             try CommandOutput.failure(command: "get", id: id, error: error, json: output.json)
         } catch {
             try CommandOutput.failure(

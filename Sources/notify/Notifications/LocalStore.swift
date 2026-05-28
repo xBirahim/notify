@@ -17,10 +17,10 @@ struct LocalStore {
             for: .applicationSupportDirectory,
             in: .userDomainMask
         ).first {
-            support = appSupport.appendingPathComponent("notifyctl", isDirectory: true)
+            support = appSupport.appendingPathComponent("notify", isDirectory: true)
         } else {
             support = fileManager.homeDirectoryForCurrentUser
-                .appendingPathComponent(".local/share/notifyctl", isDirectory: true)
+                .appendingPathComponent(".local/share/notify", isDirectory: true)
         }
 
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
