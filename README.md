@@ -5,452 +5,471 @@
 ![Version 0.2.0](https://img.shields.io/badge/version-0.2.0-brightgreen.svg)
 ![MIT](https://img.shields.io/badge/license-MIT-green.svg)
 
----
+`notify` is a macOS command-line tool for sending and managing native notifications with scriptable output, interactive action buttons, and a persistent local event store.
 
-`notify` is a macOS CLI to send and manage native macOS notifications with stable, scriptable output, action categories, and a local event store.
+## Why notify
 
-- **Scriptable** — JSON output for easy integration with shell scripts, CI pipelines, and monitoring tools
-- **Actionable** — Rich notification categories with custom buttons
-- **Trackable** — Local persistent store of sent notifications and actions
-- **Automateable** — Background listener via LaunchAgent
-
----
+- Script-friendly JSON responses for automation and CI/CD workflows
+- Native macOS notifications with categories and action buttons
+- Durable local JSONL store for sent notifications and user actions
+- LaunchAgent support for background action listening
 
 ## Requirements
 
 - macOS 13+
-- Swift 6+ (to build from source)
-
----
+- Swift 6+ (only required for build-from-source)
 
 ## Installation
 
-### From source
+### Recommended (`make install`)
 
 ```bash
-git clone https://github.com/your-org/notify.git
+git clone <repository-url> notify
 cd notify
 make install
-export PATH="$HOME/.local/bin:$PATH"
-notify version
 ```
 
-This creates:
+This installs:
 
-- `~/.local/share/Notify.app` — bundled executable with app identity (required by `UNUserNotificationCenter`)
-- `~/.local/bin/notify` — launcher script
+- `~/.local/share/Notify.app` (required app bundle identity for `UNUserNotificationCenter`)
+- `~/.local/bin/notify` (launcher)
 
-Make sure `~/.local/bin` is in your `PATH`:
+Add the launcher to your shell path:
 
 ```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+notify version
 ```
 
-### Build only
+### Build-only (advanced)
 
 ```bash
 swift build -c release
 cp .build/release/notify /usr/local/bin/
 ```
 
-> **Note:** Running the binary directly without the app bundle may cause permission prompts to fail, as `UNUserNotificationCenter` requires a bundle identity. Use `make install` whenever possible.
+Direct binary execution can fail permission flows because macOS notification APIs expect an app bundle identity. Use `make install` for reliable behavior.
 
----
+## Quick Start
 
-## Commands
+```bash
+# 1) Check current notification permission state
+notify status
+
+# 2) Request permission (opens System Settings when needed)
+notify request-permission --sound --badge
+
+# 3) Send your first notification
+notify send "Hello from notify"
+
+# 4) View stored notifications
+notify list
+```
+
+## Command Overview
+
+```text
+notify
+├── status
+├── request-permission
+├── send
+├── update
+├── dismiss
+├── list
+├── get
+├── test
+├── listen
+├── agent
+│   ├── install
+│   ├── uninstall
+│   └── status
+└── version
+```
+
+## Output Modes
+
+Most commands support these flags:
+
+- `--json`: emit machine-readable JSON
+- `--quiet`: suppress non-error output
+- `--dry-run`: validate inputs without side effects
+
+`notify version --json` returns a direct JSON object (not the standard command envelope).
+
+### JSON Envelope
+
+Most `--json` command responses use this shape:
+
+```json
+{
+  "id": "deploy-api-prod",
+  "command": "send",
+  "status": "delivered",
+  "data": {},
+  "error": null
+}
+```
+
+Error responses:
+
+```json
+{
+  "id": "deploy-api-prod",
+  "command": "get",
+  "status": "error",
+  "data": null,
+  "error": {
+    "code": "not_found",
+    "message": "Notification not found.",
+    "detail": null
+  }
+}
+```
+
+## Core Commands
 
 ### `notify status`
 
-Show macOS notification permission state.
+Show current macOS notification authorization state.
 
-| Option | Flag | Description |
-|--------|------|-------------|
-| `--json` | | Machine-readable JSON output |
-| `--quiet` | | Suppress non-error output |
+```bash
+notify status
+notify status --json
+```
 
 ### `notify request-permission`
 
-Request macOS notification authorization.
+Request notification permissions.
 
-| Option | Flag | Description |
-|--------|------|-------------|
-| `--sound` | ✓ | Request sound permission |
-| `--badge` | ✓ | Request badge permission |
-| `--provisional` | ✓ | Request provisional permission |
-| `--critical` | ✓ | Request critical alert permission |
-| `--json` | | Machine-readable JSON output |
-| `--quiet` | | Suppress non-error output |
+Options:
+
+- `--sound`
+- `--badge`
+- `--provisional`
+- `--critical`
+- `--json` `--quiet`
+
+Examples:
+
+```bash
+notify request-permission
+notify request-permission --sound --badge --json
+notify request-permission --provisional --json
+```
+
+If command-line permission prompting fails, `notify` opens System Settings and relaunches itself to complete authorization.
 
 ### `notify send`
 
 Send a notification.
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `body` | | Notification body text (positional) |
+Arguments:
 
-| Option | Description |
-|--------|-------------|
-| `--id` | Stable notification identifier |
-| `--title` | Notification title |
-| `--subtitle` | Notification subtitle |
-| `--body` | Notification body (overrides positional body) |
-| `--category` | Category: `plain`, `alert`, `job`, `deploy` |
-| `--thread` | Thread identifier for macOS grouping |
-| `--url` | URL to attach |
-| `--user-info` | Add metadata entry as `key=value` (repeatable) |
-| `--sound` | Sound type: `default`, `none` (default: `default`) |
-| `--interruption-level` | Interruption level: `passive`, `active` |
+- positional `body` (optional if `--body` is provided)
+
+Options:
+
+- `--id <id>`
+- `--title <title>`
+- `--subtitle <subtitle>`
+- `--body <body>`
+- `--category <plain|alert|job|deploy>`
+- `--thread <thread>`
+- `--url <url>`
+- `--sound <default|none>`
+- `--interruption-level <passive|active>`
+- `--user-info key=value` (repeatable)
+- `--json` `--quiet` `--dry-run`
+
+Examples:
+
+```bash
+# Minimal
+notify send "Build succeeded"
+
+# Full payload for deployment signal
+notify send \
+  --id deploy-api-prod \
+  --title "Deploy in progress" \
+  --subtitle "api-service / production" \
+  --body "Step 2/5: running migrations" \
+  --category deploy \
+  --thread deploy-api-prod \
+  --url "https://grafana.example.com/d/deploy" \
+  --sound default \
+  --interruption-level active \
+  --user-info env=prod \
+  --user-info service=api \
+  --json
+
+# Validate only
+notify send "Will not be sent" --dry-run --json
+```
 
 ### `notify update`
 
-Update a notification by replacing it (same engine as `send`).
+Replace a notification using an existing ID.
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `id` | ✓ | Notification identifier |
+Arguments:
 
-| Option | Description |
-|--------|-------------|
-| `--title` | Notification title |
-| `--subtitle` | Notification subtitle |
-| `--body` | Notification body |
-| `--category` | Category: `plain`, `alert`, `job`, `deploy` |
-| `--thread` | Thread identifier |
-| `--url` | URL to attach |
-| `--user-info` | Add metadata entry as `key=value` (repeatable) |
-| `--interruption-level` | Interruption level: `passive`, `active` |
-| `--json` | Machine-readable JSON output |
-| `--quiet` | Suppress non-error output |
-| `--dry-run` | Validate input without sending |
+- `id` (required)
+
+Options:
+
+- `--title` `--subtitle` `--body`
+- `--category <plain|alert|job|deploy>`
+- `--thread <thread>`
+- `--url <url>`
+- `--sound <default|none>`
+- `--interruption-level <passive|active>`
+- `--user-info key=value` (repeatable)
+- `--json` `--quiet` `--dry-run`
+
+Examples:
+
+```bash
+notify update deploy-api-prod \
+  --title "Deploy complete" \
+  --body "Completed in 3m42s" \
+  --sound default
+
+notify update deploy-api-prod --body "Rollback started" --category deploy --json
+```
 
 ### `notify dismiss`
 
-Dismiss pending and/or delivered notifications.
+Dismiss notifications by ID, by thread, or all.
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `id` | | Notification identifier (positional) |
+Target options (mutually exclusive):
 
-| Option | Description |
-|--------|-------------|
-| `--id` | Notification identifier |
-| `--thread` | Dismiss all notifications in this thread group |
-| `--all` | Dismiss all notifications owned by notify |
-| `--pending` | Dismiss pending (undelivered) notifications |
-| `--delivered` | Dismiss delivered notifications |
-| `--json` | Machine-readable JSON output |
-| `--quiet` | Suppress non-error output |
-| `--dry-run` | Validate input without dismissing |
+- positional `id` or `--id <id>`
+- `--thread <thread>`
+- `--all`
 
-> `--id`, `--thread`, and `--all` are mutually exclusive.
-> By default (without `--pending` or `--delivered`), both pending and delivered notifications are dismissed.
+Scope options:
+
+- `--pending`
+- `--delivered`
+
+If no scope is provided, both pending and delivered notifications are dismissed.
+
+Examples:
+
+```bash
+notify dismiss deploy-api-prod
+notify dismiss --thread deploy-api-prod
+notify dismiss --all
+notify dismiss --all --pending
+notify dismiss --thread incident-payments --delivered --json
+```
 
 ### `notify list`
 
 List notifications from the local store.
 
-| Option | Description |
-|--------|-------------|
-| `--thread` | Filter by thread identifier |
-| `--json` | Machine-readable JSON output |
-| `--quiet` | Suppress non-error output |
+Options:
+
+- `--thread <thread>`
+- `--json` `--quiet`
+
+Examples:
+
+```bash
+notify list
+notify list --thread deploy-api-prod
+notify list --json
+```
 
 ### `notify get`
 
-Get one notification by identifier from the local store.
-
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `id` | ✓ | Notification identifier |
-
-| Option | Description |
-|--------|-------------|
-| `--json` | Machine-readable JSON output |
-| `--quiet` | Suppress non-error output |
-
-### `notify test`
-
-Send a test notification.
-
-| Option | Description |
-|--------|-------------|
-| `--interruption-level` | Interruption level: `passive`, `active` |
-| `--json` | Machine-readable JSON output |
-| `--quiet` | Suppress non-error output |
-| `--dry-run` | Validate input without sending |
-
-### `notify listen`
-
-Listen for notification action callbacks (long-running process).
-
-This command runs until interrupted (`Ctrl+C`, `SIGTERM`, or `SIGINT`) and outputs structured JSON events to stdout when the user interacts with notification action buttons. Use `notify agent install` to run it as a background LaunchAgent.
-
-### `notify agent`
-
-Manage the background listener LaunchAgent.
-
-#### `notify agent install`
-
-Install and load the LaunchAgent for background notification listening.
-
-Creates `~/Library/LaunchAgents/io.notify.listener.plist` and loads it with `launchctl`.
-Logs are written to `~/Library/Logs/notify/listener.log`.
-
-#### `notify agent uninstall`
-
-Unload and remove the LaunchAgent.
-
-#### `notify agent status`
-
-Check if the listener LaunchAgent is installed and running.
-
-Output:
-```
-Plist: installed
-Service: running
-```
-
-Also supports `--json` for machine-readable status.
-
-### `notify version`
-
-Print the notify version.
-
-| Option | Description |
-|--------|-------------|
-| `--json` | Machine-readable JSON output with version, Swift version, and platform |
-| `--quiet` | Suppress output |
-
----
-
-## Global options
-
-These options are available on most commands:
-
-| Option | Flag | Description |
-|--------|------|-------------|
-| `--json` | | Machine-readable JSON output |
-| `--quiet` | | Suppress non-error output (exit code only) |
-| `--dry-run` | | Validate command without side effects |
-
----
-
-## Action categories
-
-| Category | Buttons |
-|----------|---------|
-| `plain` | Default click only (no custom buttons) |
-| `alert` | Acknowledge, Open, Silence |
-| `job` | Acknowledge, Retry, Open |
-| `deploy` | Open, Rollback, Acknowledge |
-
-Run `notify listen` or `notify agent install` to receive action callbacks as structured JSON events.
-
-Action events are written to `~/Library/Application\ Support/notify/actions.jsonl`.
-
----
-
-## Local store
-
-Notifications and actions are persisted to JSONL files:
-
-```
-~/Library/Application Support/notify/notifications.jsonl
-~/Library/Application Support/notify/actions.jsonl
-```
-
-- Each line is a JSON object representing a notification or action event
-- The store is append-only and rotated manually if needed
-- Used by `list`, `get`, and `dismiss --thread` commands
-
----
-
-## Exit codes
-
-| Code | Name | Meaning |
-|------|------|---------|
-| `0` | success | Command completed successfully |
-| `44` | notFound | Resource not found |
-| `64` | usage | Usage error |
-| `65` | invalidInput | Invalid input |
-| `69` | permissionDenied | Permission denied |
-| `70` | systemError | System error |
-| `124` | timeout | Timeout |
-| `130` | interrupted | Interrupted by user |
-
----
-
-## Examples
-
-### Status and permissions
+Retrieve one notification by ID from the local store.
 
 ```bash
-# Check current permission state
-notify status
-notify status --json
-
-# Request notification authorization
-notify request-permission
-notify request-permission --sound --badge --json
-```
-
-### Sending notifications
-
-```bash
-# Simple notification
-notify send "Hello from the CLI!"
-
-# With all options
-notify send \
-  --id deploy-api-prod \
-  --title "Déploiement" \
-  --subtitle "Backend API" \
-  --body "Step 2/5: migrations" \
-  --category deploy \
-  --thread deploy-api-prod \
-  --url "https://grafana.example/d/abc" \
-  --sound default \
-  --interruption-level active \
-  --json
-
-# Dry run (validate without sending)
-notify send "Test" --dry-run --json
-```
-
-### Updating notifications
-
-```bash
-# Update an existing notification by its ID
-notify update deploy-api-prod \
-  --title "Déploiement terminé" \
-  --body "OK en 3m42s"
-```
-
-### Dismissing notifications
-
-```bash
-# By ID
-notify dismiss deploy-api-prod
-
-# By thread group
-notify dismiss --thread deploy-api-prod
-
-# Dismiss all
-notify dismiss --all
-
-# Scope to pending or delivered only
-notify dismiss --all --pending
-notify dismiss --all --delivered
-```
-
-### Listing and inspecting
-
-```bash
-# List all notifications from the local store
-notify list
-notify list --json
-
-# Filter by thread
-notify list --thread deploy-api-prod
-
-# Get a single notification
+notify get deploy-api-prod
 notify get deploy-api-prod --json
 ```
 
-### Background listener
+### `notify test`
+
+Send a standard test notification (`id=notify-test`).
 
 ```bash
-# Run listener in foreground (for testing)
+notify test
+notify test --interruption-level active --json
+notify test --dry-run
+```
+
+### `notify listen`
+
+Run a foreground listener for notification action events. This process stays alive until `SIGINT`/`SIGTERM`.
+
+```bash
 notify listen
+```
 
-# Install as a background LaunchAgent
+Each action event is emitted to stdout as JSON (JSON Lines), for example:
+
+```json
+{"action":"OPEN","category":"deploy","notification_id":"deploy-api-prod","timestamp":"2026-05-28T19:12:22Z","url":"https://grafana.example.com/d/deploy"}
+```
+
+### `notify agent`
+
+Manage the background LaunchAgent that runs `notify listen`.
+
+```bash
 notify agent install
-
-# Check status
 notify agent status
-
-# Remove
 notify agent uninstall
 ```
 
-### Test notification
+Paths used by the agent:
+
+- plist: `~/Library/LaunchAgents/io.notify.listener.plist`
+- log: `~/Library/Logs/notify/listener.log`
+
+`notify agent status` reports service state as one of `running`, `loaded`, or `not loaded`.
+
+### `notify version`
+
+Print installed version information.
 
 ```bash
-# Quick smoke test
-notify test
-
+notify version
+notify version --json
 ```
 
+## Action Categories and Buttons
 
-### Scripting with JSON
+`notify` registers these categories:
+
+- `plain`: no custom buttons
+- `alert`: `ACK` (Acknowledge), `OPEN`, `SILENCE`
+- `job`: `ACK`, `RETRY`, `OPEN`
+- `deploy`: `OPEN`, `ROLLBACK`, `ACK`
+
+When user clicks the notification body (default action) or the `OPEN` button, `notify` opens the attached `--url` if provided.
+
+## Local Store and Querying
+
+`notify` persists records as JSON Lines:
+
+- `~/Library/Application Support/notify/notifications.jsonl`
+- `~/Library/Application Support/notify/actions.jsonl`
+
+`notify list` returns the latest stored record per notification ID (deduplicated from append-only history).
+
+Practical queries:
 
 ```bash
-# Send and capture the notification ID
-ID=$(notify send "Deploy started" --id deploy-web --json | jq -r '.id')
+# Latest 20 action events
+tail -n 20 "$HOME/Library/Application Support/notify/actions.jsonl"
 
-# Update later
-notify update "$ID" --body "Deploy finished"
+# Find all deploy actions
+jq -c 'select(.category == "deploy")' "$HOME/Library/Application Support/notify/actions.jsonl"
 
-# Get the stored record
-notify get "$ID" --json | jq '.data'
+# List all notifications for a thread
+notify list --thread deploy-api-prod --json | jq '.data[] | {id, title, body, updated_at}'
+
+# Count retry actions
+jq -r 'select(.action == "RETRY") | .notification_id' \
+   "$HOME/Library/Application Support/notify/actions.jsonl" | wc -l
 ```
 
----
+## Real-World Workflows
 
-## Notes
+### 1) CI/CD deployment lifecycle
 
-- `notify` can only access notifications created by the same app identity (Notify.app bundle).
-- `send` and `update` use the same `UNNotificationRequest` engine — sending with an existing identifier replaces the notification.
-- Notifications require an active macOS user session. Behavior may be limited from headless/SSH/daemon contexts.
-- The listener (`notify listen`) must have its app bundle in focus or be run via the LaunchAgent to receive action callbacks.
+```bash
+DEPLOY_ID="deploy-api-$(date +%s)"
 
----
+notify send \
+  --id "$DEPLOY_ID" \
+  --title "Deploy started" \
+  --subtitle "api-service / production" \
+  --body "Build #1842 is running" \
+  --category deploy \
+  --thread "$DEPLOY_ID" \
+  --url "https://ci.example.com/builds/1842" \
+  --json
+
+# Later in pipeline
+notify update "$DEPLOY_ID" \
+  --title "Deploy succeeded" \
+  --body "All checks green" \
+  --url "https://status.example.com/incidents/none" \
+  --json
+```
+
+### 2) Incident alert with operator actions
+
+```bash
+notify send \
+  --id incident-payments-502 \
+  --title "Payments API incident" \
+  --subtitle "HTTP 502 spike" \
+  --body "Error rate exceeded 12%" \
+  --category alert \
+  --thread incident-payments \
+  --url "https://runbooks.example.com/payments-incident" \
+  --interruption-level active
+```
+
+Run listener in another terminal:
+
+```bash
+notify listen | jq -c '{ts: .timestamp, action: .action, id: .notification_id}'
+```
+
+### 3) Background operations with LaunchAgent
+
+```bash
+notify agent install
+notify agent status --json | jq '.data'
+tail -f "$HOME/Library/Logs/notify/listener.log"
+```
+
+### 4) Scripted permission gate
+
+```bash
+AUTH=$(notify status --json | jq -r '.data.authorization')
+if [ "$AUTH" = "denied" ]; then
+  echo "Notifications denied; requesting permission"
+  notify request-permission --sound --badge
+fi
+```
+
+### 5) Thread cleanup after maintenance window
+
+```bash
+notify dismiss --thread maintenance-db-cluster --delivered --json
+notify list --thread maintenance-db-cluster --json
+```
+
+## Exit Codes
+
+- `0`: success
+- `44`: not found
+- `64`: usage
+- `65`: invalid input
+- `69`: permission denied
+- `70`: system error
+- `124`: timeout
+- `130`: interrupted
 
 ## Development
 
 ```bash
-# Build
 swift build
-
-# Test
 swift test
-
-# Build for release
 swift build -c release
-
-# Build & install
 make install
 ```
 
-### Project structure
+## Notes and Constraints
 
-```
-Sources/
-  notify/
-    Notify.swift           # Entry point & command configuration
-    Commands/                 # CLI command implementations
-    Notifications/            # Notification service, payload, store
-    Support/                  # Utilities: output, errors, exit codes
-    Schemas/                  # (reserved for future JSON schemas)
-Tests/
-  notifyTests/             # Unit tests
-```
-
----
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Commit your changes (`git commit -am 'Add my feature'`)
-4. Push to the branch (`git push origin feature/my-feature`)
-5. Open a Pull Request
-
----
-
-## License
-
-MIT License. See [LICENSE](LICENSE) for details.
+- `notify` can only manage notifications owned by its own app identity.
+- `send` and `update` both use `UNNotificationRequest`; same `--id` replaces existing notification content.
+- Notifications and interaction callbacks require an active macOS user session.
+- For reliable action capture across sessions, use `notify agent install`.
