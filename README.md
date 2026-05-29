@@ -5,14 +5,15 @@
 ![Version 0.2.0](https://img.shields.io/badge/version-0.2.0-brightgreen.svg)
 ![MIT](https://img.shields.io/badge/license-MIT-green.svg)
 
-`notify` is a macOS command-line tool for sending and managing native notifications with scriptable output, interactive action buttons, and a persistent local event store.
+`notify` is a macOS command-line tool for sending and managing native notifications. Designed for **AI agents** running on macOS, it lets agents keep the user informed, ask for decisions via interactive action buttons, and report results — all through native macOS notifications.
 
 ## Why notify
 
-- Script-friendly JSON responses for automation and CI/CD workflows
-- Native macOS notifications with categories and action buttons
-- Durable local JSONL store for sent notifications and user actions
-- LaunchAgent support for background action listening
+- **AI agents can notify you** during long-running tasks without cluttering the terminal
+- **Interactive action buttons** let agents ask for confirmation (approve/retry/rollback) — and wait for your response
+- **Scriptable JSON output** so agents can parse results and errors programmatically
+- **Persistent local store** for auditing past notifications and user actions
+- **LaunchAgent support** for background action listening across sessions
 
 ## Requirements
 
@@ -66,6 +67,18 @@ notify send "Hello from notify"
 # 4) View stored notifications
 notify list
 ```
+
+## AI Agent Skill
+
+The root `SKILL.md` teaches AI agents to:
+
+- Send progress notifications during long tasks
+- Ask for confirmation using interactive action buttons
+- Report results with status and timing
+- Handle permission setup automatically
+- Parse JSON output for decision-making
+
+Load `SKILL.md` into your AI agent's context, or configure your tool to include it automatically (OpenCode: add to `skills.paths` or `instructions`; Cursor: add to `.cursorrules`).
 
 ## Command Overview
 
@@ -188,10 +201,10 @@ Examples:
 # Minimal
 notify send "Build succeeded"
 
-# Full payload for deployment signal
+# Full payload
 notify send \
   --id deploy-api-prod \
-  --title "Deploy in progress" \
+  --title "Operation in progress" \
   --subtitle "api-service / production" \
   --body "Step 2/5: running migrations" \
   --category deploy \
@@ -230,7 +243,7 @@ Examples:
 
 ```bash
 notify update deploy-api-prod \
-  --title "Deploy complete" \
+  --title "Operation complete" \
   --body "Completed in 3m42s" \
   --sound default
 
@@ -344,10 +357,12 @@ notify version --json
 
 `notify` registers these categories:
 
-- `plain`: no custom buttons
-- `alert`: `ACK` (Acknowledge), `OPEN`, `SILENCE`
-- `job`: `ACK`, `RETRY`, `OPEN`
-- `deploy`: `OPEN`, `ROLLBACK`, `ACK`
+| Category | Buttons | Use case |
+|---|---|---|
+| `plain` | *(none)* | Pure information, no interaction |
+| `alert` | ACK, OPEN, SILENCE | Alert that needs acknowledgment |
+| `job` | ACK, RETRY, OPEN | Background job the user can retry |
+| `deploy` | OPEN, ROLLBACK, ACK | Operation to approve or rollback |
 
 When user clicks the notification body (default action) or the `OPEN` button, `notify` opens the attached `--url` if provided.
 
@@ -377,70 +392,113 @@ jq -r 'select(.action == "RETRY") | .notification_id' \
    "$HOME/Library/Application Support/notify/actions.jsonl" | wc -l
 ```
 
-## Real-World Workflows
+## AI Agent Workflows
 
-### 1) CI/CD deployment lifecycle
+### 1) Notify the user during a long task
+
+Send progressive updates so the user knows what your agent is doing.
 
 ```bash
-DEPLOY_ID="deploy-api-$(date +%s)"
+TASK_ID="build-site-$(date +%s)"
 
 notify send \
-  --id "$DEPLOY_ID" \
-  --title "Deploy started" \
-  --subtitle "api-service / production" \
-  --body "Build #1842 is running" \
-  --category deploy \
-  --thread "$DEPLOY_ID" \
-  --url "https://ci.example.com/builds/1842" \
+  --id "$TASK_ID" \
+  --title "Building site" \
+  --body "Step 1/4: fetching content..." \
+  --category plain \
+  --thread "$TASK_ID" \
   --json
 
-# Later in pipeline
-notify update "$DEPLOY_ID" \
-  --title "Deploy succeeded" \
-  --body "All checks green" \
-  --url "https://status.example.com/incidents/none" \
+# ... do work ...
+notify update "$TASK_ID" --body "Step 2/4: generating pages..." --json
+
+# ... do work ...
+notify update "$TASK_ID" --body "Step 3/4: optimizing assets..." --json
+
+# Final update
+notify update "$TASK_ID" \
+  --title "Build complete" \
+  --body "Generated 342 pages in 1.2s" \
+  --sound default \
   --json
 ```
 
-### 2) Incident alert with operator actions
+### 2) Ask the user for confirmation
+
+Use action categories — `deploy`, `job`, or `alert` — to attach interactive buttons, then run `notify listen` to capture the user's choice.
 
 ```bash
+# Ask user to confirm
 notify send \
-  --id incident-payments-502 \
-  --title "Payments API incident" \
-  --subtitle "HTTP 502 spike" \
-  --body "Error rate exceeded 12%" \
-  --category alert \
-  --thread incident-payments \
-  --url "https://runbooks.example.com/payments-incident" \
-  --interruption-level active
+  --id cleanup-db \
+  --title "Cleanup old records?" \
+  --body "Delete 1,204 stale records from the database? This cannot be undone." \
+  --category job \
+  --thread cleanup \
+  --json
+
+# Wait up to 2 minutes for response
+RESPONSE=$(timeout 120 notify listen 2>/dev/null | head -n 1 | jq -r '.action // "timeout"')
+
+if [ "$RESPONSE" = "ACK" ] || [ "$RESPONSE" = "OPEN" ]; then
+  # User approved — proceed
+  notify update cleanup-db --title "Cleaning up..." --body "Removing 1,204 records..." --json
+  # ... perform operation ...
+  notify update cleanup-db --title "Cleanup complete" --body "Removed 1,204 records in 3.2s" --sound default --json
+elif [ "$RESPONSE" = "RETRY" ]; then
+  notify update cleanup-db --body "User requested retry — re-evaluating" --json
+elif [ "$RESPONSE" = "timeout" ]; then
+  notify update cleanup-db --title "Operation skipped" --body "No response received — cancelled" --json
+fi
 ```
 
-Run listener in another terminal:
+### 3) Report task result
+
+After completing a task, replace the progress notification with a clear result.
 
 ```bash
-notify listen | jq -c '{ts: .timestamp, action: .action, id: .notification_id}'
+TASK_ID="backup-db-$(date +%s)"
+
+notify send \
+  --id "$TASK_ID" \
+  --title "Starting backup" \
+  --body "Backing up production database..." \
+  --category plain \
+  --thread "$TASK_ID" \
+  --json
+
+# ... perform backup ...
+BACKUP_SIZE="2.4 GB"
+DURATION="47s"
+
+notify update "$TASK_ID" \
+  --title "Backup complete" \
+  --body "Database backed up successfully (${BACKUP_SIZE}, ${DURATION})" \
+  --sound default \
+  --json
 ```
 
-### 3) Background operations with LaunchAgent
+On failure:
 
 ```bash
-notify agent install
-notify agent status --json | jq '.data'
-tail -f "$HOME/Library/Logs/notify/listener.log"
+notify update "$TASK_ID" \
+  --title "Backup failed" \
+  --body "Database backup failed after ${DURATION}" \
+  --interruption-level active \
+  --json
 ```
 
-### 4) Scripted permission gate
+### 4) Scripted permission gate for agents
 
 ```bash
 AUTH=$(notify status --json | jq -r '.data.authorization')
-if [ "$AUTH" = "denied" ]; then
-  echo "Notifications denied; requesting permission"
+if [ "$AUTH" = "denied" ] || [ "$AUTH" = "notDetermined" ]; then
+  echo "Requesting notification permission"
   notify request-permission --sound --badge
 fi
 ```
 
-### 5) Thread cleanup after maintenance window
+### 5) Clean up notification threads
 
 ```bash
 notify dismiss --thread maintenance-db-cluster --delivered --json
@@ -473,3 +531,5 @@ make install
 - `send` and `update` both use `UNNotificationRequest`; same `--id` replaces existing notification content.
 - Notifications and interaction callbacks require an active macOS user session.
 - For reliable action capture across sessions, use `notify agent install`.
+- When used by AI agents, prefer `--json` output for reliable error checking.
+- `notify listen` times out automatically; for scripted agent workflows, wrap it with `timeout` to avoid indefinite hangs.
