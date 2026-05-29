@@ -22,11 +22,13 @@ notify status --json
 notify request-permission --sound --badge
 ```
 
-If `notify` is not installed, tell the user to run:
+If `notify` is not installed or needs updating (e.g. after pulling new changes), rebuild and install:
 
 ```bash
-git clone <repo-url> notify && cd notify && make install
+make install
 ```
+
+> **Note**: If `send --wait` produces no output, first run `make install` — the installed binary may be outdated.
 
 ## Quick Reference
 
@@ -35,6 +37,7 @@ git clone <repo-url> notify && cd notify && make install
 | `notify status` | Check permission state | Before first send |
 | `notify request-permission` | Grant notification access | First-time setup |
 | `notify send` | Send a new notification | Inform user, ask confirmation |
+| `notify send --wait` | Send + wait for button press | Get user decision in one command |
 | `notify update` | Replace an existing notification | Update progress → result |
 | `notify dismiss` | Remove notifications | Clean up after done |
 | `notify list` | View stored notifications | Debug / audit |
@@ -138,7 +141,7 @@ STATUS=$(notify send --id task-1 --title "Task" --body "Running" --json | jq -r 
 
 ## Asking for User Confirmation (Action Buttons)
 
-This is the most powerful feature for AI agents. Use notification *categories* to attach interactive buttons, then run `notify listen` to capture the user's choice.
+This is the most powerful feature for AI agents. Use notification *categories* to attach interactive buttons, then use `notify send --wait` to capture the user's choice in a single command.
 
 ### Available Categories
 
@@ -151,9 +154,11 @@ This is the most powerful feature for AI agents. Use notification *categories* t
 
 ### Pattern: Ask → Wait → Act
 
+With `notify send --wait`, the command blocks until the user clicks a button, then outputs the action. No separate `notify listen` process needed.
+
 ```bash
-# Step 1: Send notification with interactive buttons
-notify send \
+# Step 1: Send and wait for the user's response
+ACTION=$(notify send \
   --id confirm-deploy \
   --title "Deploy to production?" \
   --body "Release v2.1.0 to production? 12 commits, 3 migrations." \
@@ -161,18 +166,16 @@ notify send \
   --thread deploy-confirm \
   --url "https://github.com/org/repo/releases/v2.1.0" \
   --interruption-level active \
-  --json
+  --wait --wait-timeout 300 \
+  --json 2>/dev/null | jq -r '.data.action // "timeout"')
 
-# Step 2: Listen for the user's button press
-# (runs until the user clicks a button or 5 minutes pass)
-ACTION=$(timeout 300 notify listen 2>/dev/null | head -n 1 | jq -r '.action // "timeout"')
-
-# Step 3: Act on the response
+# Step 2: Act on the response
 case "$ACTION" in
-  "OPEN")    echo "User opened the URL — continuing" ;;
+  "OPEN")     echo "User opened the URL — continuing" ;;
   "ROLLBACK") echo "User requested rollback — aborting" ;;
-  "ACK")     echo "User acknowledged — continuing" ;;
-  "timeout") echo "No response within 5 minutes — aborting" ;;
+  "ACK")      echo "User acknowledged — continuing" ;;
+  "timeout")  echo "No response within 5 minutes — aborting" ;;
+  *)          echo "Unknown action ($ACTION) — continuing" ;;
 esac
 ```
 
@@ -208,20 +211,18 @@ notify update "$TASK_ID" \
 
 ### Workflow 2: Ask the user for a decision
 
-Use when the agent needs human input before proceeding. Combine `--category deploy` (or `alert`) with `notify listen` to get the user's choice.
+Use when the agent needs human input before proceeding. `send --wait` blocks until the user clicks a button (or timeout), then returns the action immediately.
 
 ```bash
 # Ask user to confirm a destructive operation
-notify send \
+RESPONSE=$(notify send \
   --id cleanup-db \
   --title "Cleanup old records?" \
   --body "Delete 1,204 stale records from the database? This cannot be undone." \
   --category job \
   --thread cleanup \
-  --json
-
-# Wait up to 120 seconds for response
-RESPONSE=$(timeout 120 notify listen 2>/dev/null | head -n 1 | jq -r '.action // "timeout"')
+  --wait --wait-timeout 120 \
+  --json 2>/dev/null | jq -r '.data.action // "timeout"')
 
 if [ "$RESPONSE" = "ACK" ] || [ "$RESPONSE" = "OPEN" ]; then
   notify update cleanup-db --title "Cleaning up..." --body "Removing 1,204 records..." --json
@@ -299,10 +300,17 @@ Exit codes: `0` success, `44` not found, `64` usage, `65` invalid input, `69` pe
 
 ## Listen Mode (Background Listener)
 
-For persistent action capture, the LaunchAgent runs `notify listen` in the background:
+For most interactive scripts, use `notify send --wait` (see above) — it blocks until the user responds, no separate listener needed.
+
+For non‑blocking workflows (send a notification, continue working, check response later), install the background LaunchAgent:
 
 ```bash
 notify agent install
 ```
 
-This is useful when you want action responses captured even when no terminal session is active. The listener logs actions to `~/Library/Logs/notify/listener.log`.
+The agent runs `notify listen` in the background and logs every action to `~/Library/Logs/notify/listener.log`. You can poll or tail this file to capture responses.
+
+To stop the agent:
+```bash
+notify agent uninstall
+```
