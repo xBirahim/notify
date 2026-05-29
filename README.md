@@ -22,10 +22,20 @@
 
 ## Installation
 
-### Recommended (`make install`)
+### Homebrew (recommended)
 
 ```bash
-git clone <repository-url> notify
+brew tap xBirahim/notify
+brew install notify
+notify request-permission --sound --badge
+```
+
+To upgrade: `brew upgrade notify`
+
+### From source (`make install`)
+
+```bash
+git clone https://github.com/xBirahim/notify.git
 cd notify
 make install
 ```
@@ -50,7 +60,7 @@ swift build -c release
 cp .build/release/notify /usr/local/bin/
 ```
 
-Direct binary execution can fail permission flows because macOS notification APIs expect an app bundle identity. Use `make install` for reliable behavior.
+Direct binary execution can fail permission flows because macOS notification APIs expect an app bundle identity. Use Homebrew or `make install` for reliable behavior.
 
 ## Quick Start
 
