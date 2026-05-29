@@ -3,7 +3,10 @@ BUNDLE_DIR = $(PREFIX)/share/Notify.app
 BIN_DIR = $(PREFIX)/bin
 VERSION := $(shell grep 'let appVersion' Sources/notify/Notify.swift | sed 's/.*"\(.*\)".*/\1/')
 
-.PHONY: build run test release install bundle link clean
+.PHONY: build run test release install bundle link clean dist
+
+DIST_NAME = notify-$(VERSION)
+DIST_DIR  = dist
 
 build:
 	swift build
@@ -47,3 +50,12 @@ link:
 
 clean:
 	swift package clean
+
+dist: clean
+	mkdir -p "$(DIST_DIR)"
+	git archive --format=tar.gz \
+	    --prefix="$(DIST_NAME)/" \
+	    -o "$(DIST_DIR)/$(DIST_NAME).tar.gz" \
+	    HEAD
+	@echo "Created $(DIST_DIR)/$(DIST_NAME).tar.gz"
+	@shasum -a 256 "$(DIST_DIR)/$(DIST_NAME).tar.gz"
