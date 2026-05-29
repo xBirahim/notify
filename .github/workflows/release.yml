@@ -40,23 +40,31 @@ jobs:
       - name: Build & test
         run: swift build -c release && swift test
 
-      - name: Create tarball & compute SHA256
-        id: tarball
-        run: |
-          V="${{ steps.version.outputs.version }}"
-          NAME="notify-${V}"
-          ARCHIVE="${NAME}.tar.gz"
-          git archive --format=tar.gz --prefix="${NAME}/" -o "$ARCHIVE" HEAD
-          SHA=$(shasum -a 256 "$ARCHIVE" | awk '{print $1}')
-          echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
-          echo "sha256=$SHA"      >> "$GITHUB_OUTPUT"
-
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
-            "${{ steps.tarball.outputs.archive }}" \
             --title "notify ${{ steps.version.outputs.tag }}" \
-            --notes "SHA256: \`${{ steps.tarball.outputs.sha256 }}\`" \
+            --notes "Homebrew SHA256 will appear below once the release is published." \
             --verify-tag
+
+      - name: Compute SHA256 of GitHub auto-generated tarball
+        id: sha256
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          V="${{ steps.version.outputs.version }}"
+          URL="https://github.com/xBirahim/notify/archive/refs/tags/${TAG}.tar.gz"
+          curl -sL "$URL" -o "notify-${V}.tar.gz"
+          SHA=$(shasum -a 256 "notify-${V}.tar.gz" | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "url=$URL"    >> "$GITHUB_OUTPUT"
+
+      - name: Update release notes with SHA256
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          SHA="${{ steps.sha256.outputs.sha256 }}"
+          URL="${{ steps.sha256.outputs.url }}"
+          gh release edit "$TAG" --notes "$(printf 'Homebrew formula SHA256 (for \`url \"%s\"\`):\n\n```\n%s\n```' "$URL" "$SHA")"
