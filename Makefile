@@ -1,6 +1,7 @@
 PREFIX ?= $(HOME)/.local
 BUNDLE_DIR = $(PREFIX)/share/Notify.app
 BIN_DIR = $(PREFIX)/bin
+VERSION := $(shell grep 'let appVersion' Sources/notify/Notify.swift | sed 's/.*"\(.*\)".*/\1/')
 
 .PHONY: build run test release install bundle link clean
 
@@ -33,7 +34,7 @@ bundle: release
 	mkdir -p "$(BUNDLE_DIR)/Contents/MacOS"
 	cp .build/release/notify "$(BUNDLE_DIR)/Contents/MacOS/notify"
 	chmod 755 "$(BUNDLE_DIR)/Contents/MacOS/notify"
-	printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>notify</string><key>CFBundleIdentifier</key><string>io.notify.app</string><key>CFBundleName</key><string>Notify</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>0.2.0</string><key>CFBundleVersion</key><string>1</string></dict></plist>' > "$(BUNDLE_DIR)/Contents/Info.plist"
+	printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>notify</string><key>CFBundleIdentifier</key><string>io.notify.app</string><key>CFBundleName</key><string>Notify</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>$(VERSION)</string><key>CFBundleVersion</key><string>1</string></dict></plist>' > "$(BUNDLE_DIR)/Contents/Info.plist"
 	codesign -s - --force --deep "$(BUNDLE_DIR)" 2>/dev/null || true
 	@/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$(BUNDLE_DIR)" 2>/dev/null || true
 	@echo "Created $(BUNDLE_DIR)"
