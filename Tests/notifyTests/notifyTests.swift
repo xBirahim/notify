@@ -198,6 +198,23 @@ final class NotifyCategoryTests: XCTestCase {
     func testNotificationSoundRawValues() {
         XCTAssertEqual(NotificationSound.default.rawValue, "default")
         XCTAssertEqual(NotificationSound.none.rawValue, "none")
+        XCTAssertEqual(NotificationSound.named("Purr").rawValue, "Purr")
+    }
+
+    func testNotificationSoundArgumentParsing() {
+        XCTAssertEqual(NotificationSound(argument: "default"), .default)
+        XCTAssertEqual(NotificationSound(argument: "none"), .none)
+        XCTAssertEqual(NotificationSound(argument: "Purr"), .named("Purr"))
+        XCTAssertEqual(NotificationSound(argument: "Sosumi"), .named("Sosumi"))
+    }
+
+    func testNotificationSoundCodable() throws {
+        let cases: [NotificationSound] = [.default, .none, .named("Purr"), .named("Sosumi")]
+        for sound in cases {
+            let data = try JSONEncoder().encode(sound)
+            let decoded = try JSONDecoder().decode(NotificationSound.self, from: data)
+            XCTAssertEqual(decoded, sound)
+        }
     }
 }
 

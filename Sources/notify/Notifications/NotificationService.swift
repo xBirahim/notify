@@ -38,7 +38,7 @@ final class NotificationService {
         case .authorized, .provisional, .ephemeral:
             return
         case .notDetermined:
-            let granted = try? await requestAuthorization(options: .provisional)
+            let granted = try? await requestAuthorization(options: [.provisional, .sound])
             if granted == true { return }
             throw NotifyError.permissionDenied(
                 message: "Notifications are not authorized.",
@@ -67,8 +67,13 @@ final class NotificationService {
         content.body = payload.body
         content.categoryIdentifier = payload.category ?? ""
 
-        if payload.sound == .default {
+        switch payload.sound {
+        case .default:
             content.sound = .default
+        case .none:
+            break
+        case .named(let name):
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: name))
         }
 
         var userInfo: [AnyHashable: Any] = payload.userInfo
