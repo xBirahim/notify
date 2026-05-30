@@ -26,7 +26,7 @@
 
 ```bash
 brew tap xBirahim/notify
-brew install notify
+brew install xbirahim/notify/notify
 notify request-permission --sound
 ```
 
