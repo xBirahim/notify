@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-05-30
+
+### Added
+- `--sound` option on `send` and `update` commands (`default`, `none`, or custom named sounds)
+- Support for all 14 macOS system sounds (Basso, Blow, Bottle, etc.)
+- Custom sound files from `/System/Library/Sounds/` and `~/Library/Sounds/`
+- Sound permission request via `request-permission --sound`
+- Sound status display in `status` command
+
+### Changed
+- `NotificationSound` enum with `.default`, `.none`, `.named(String)` cases
+- Removed badge permission (no longer displayed in status)
+
+### Fixed
+- Disambiguated `.none` to `NotificationSound.none` in tests
+
 ## [0.2.0] — 2026-05-30
 
 ### Added
