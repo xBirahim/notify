@@ -199,7 +199,7 @@ Options:
 - `--category <plain|alert|job|deploy>`
 - `--thread <thread>`
 - `--url <url>`
-- `--sound <default|none>`
+- `--sound <default\|none\|name>`
 - `--interruption-level <passive|active>`
 - `--user-info key=value` (repeatable)
 - `--json` `--quiet` `--dry-run`
@@ -243,7 +243,7 @@ Options:
 - `--category <plain|alert|job|deploy>`
 - `--thread <thread>`
 - `--url <url>`
-- `--sound <default|none>`
+- `--sound <default\|none\|name>`
 - `--interruption-level <passive|active>`
 - `--user-info key=value` (repeatable)
 - `--json` `--quiet` `--dry-run`
@@ -360,6 +360,46 @@ Print installed version information.
 ```bash
 notify version
 notify version --json
+```
+
+## Sounds
+
+`notify` supports macOS system sounds and custom sound files. Pass the sound name (without extension) via `--sound`:
+
+```bash
+notify send "Hello" --sound Purr
+notify send "Silent" --sound none
+```
+
+### Built-in system sounds
+
+| Name | Description |
+|---|---|
+| `Basso` | Deep bass |
+| `Blow` | Air blow |
+| `Bottle` | Glass bottle |
+| `Frog` | Frog croak |
+| `Funk` | Funky riff |
+| `Glass` | Glass breaking |
+| `Hero` | Heroic fanfare |
+| `Morse` | Morse code |
+| `Ping` | Sonar ping |
+| `Pop` | Pop cork |
+| `Purr` | Cat purr |
+| `Sosumi` | Classic macOS chime |
+| `Submarine` | Submarine sonar |
+| `Tink` | Small bell |
+| `default` | System default notification sound |
+| `none` | No sound |
+
+Sound files are loaded from `/System/Library/Sounds/` and `~/Library/Sounds/`. Supported formats: `.aiff`, `.caf`, `.wav`, `.mp3`, `.m4a`.
+
+```bash
+# Custom sound from ~/Library/Sounds/
+notify send "Custom alert" --sound MyAlert.caf
+
+# Combine with interruption level for urgent alerts
+notify send "Critical failure" --sound Sosumi --interruption-level active
 ```
 
 ## Action Categories and Buttons
