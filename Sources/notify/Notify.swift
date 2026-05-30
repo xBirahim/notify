@@ -5,7 +5,7 @@ import Foundation
 
 @main
 struct Notify: AsyncParsableCommand {
-    static let appVersion = "0.2.0"
+    static let appVersion = "0.3.0"
 
     static let configuration = CommandConfiguration(
         commandName: "notify",
