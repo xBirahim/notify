@@ -68,3 +68,25 @@ jobs:
           SHA="${{ steps.sha256.outputs.sha256 }}"
           URL="${{ steps.sha256.outputs.url }}"
           gh release edit "$TAG" --notes "$(printf 'Homebrew formula SHA256 (for \`url \"%s\"\`):\n\n```\n%s\n```' "$URL" "$SHA")"
+
+      - name: Update Homebrew formula
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          V="${{ steps.version.outputs.version }}"
+          SHA="${{ steps.sha256.outputs.sha256 }}"
+
+          git clone https://x-access-token:${GH_TOKEN}@github.com/xBirahim/homebrew-notify.git
+          cd homebrew-notify
+
+          sed -i '' \
+            "s|url \".*\"|url \"https://github.com/xBirahim/notify/archive/refs/tags/${TAG}.tar.gz\"|; \
+             s|sha256 \".*\"|sha256 \"${SHA}\"|" \
+            Formula/notify.rb
+
+          git add Formula/notify.rb
+          git -c user.name="notify-bot" \
+              -c user.email="bot@notify.io" \
+              commit -m "notify: update to ${V}"
+          git push
