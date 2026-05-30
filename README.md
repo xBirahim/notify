@@ -27,7 +27,7 @@
 ```bash
 brew tap xBirahim/notify
 brew install notify
-notify request-permission --sound --badge
+notify request-permission --sound
 ```
 
 To upgrade: `brew upgrade notify`
@@ -69,7 +69,7 @@ Direct binary execution can fail permission flows because macOS notification API
 notify status
 
 # 2) Request permission (opens System Settings when needed)
-notify request-permission --sound --badge
+notify request-permission --sound
 
 # 3) Send your first notification
 notify send "Hello from notify"
@@ -168,7 +168,6 @@ Request notification permissions.
 Options:
 
 - `--sound`
-- `--badge`
 - `--provisional`
 - `--critical`
 - `--json` `--quiet`
@@ -177,7 +176,7 @@ Examples:
 
 ```bash
 notify request-permission
-notify request-permission --sound --badge --json
+notify request-permission --sound --json
 notify request-permission --provisional --json
 ```
 
@@ -504,7 +503,7 @@ notify update "$TASK_ID" \
 AUTH=$(notify status --json | jq -r '.data.authorization')
 if [ "$AUTH" = "denied" ] || [ "$AUTH" = "notDetermined" ]; then
   echo "Requesting notification permission"
-  notify request-permission --sound --badge
+  notify request-permission --sound
 fi
 ```
 

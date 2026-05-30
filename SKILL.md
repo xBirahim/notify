@@ -19,7 +19,7 @@ which notify 2>/dev/null || echo "not installed"
 notify status --json
 
 # 3. If not authorized, request permission (run once per machine)
-notify request-permission --sound --badge
+notify request-permission --sound
 ```
 
 If `notify` is not installed or needs updating (e.g. after pulling new changes), rebuild and install:

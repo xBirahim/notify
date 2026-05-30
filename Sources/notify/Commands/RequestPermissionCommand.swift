@@ -14,9 +14,6 @@ struct RequestPermissionCommand: AsyncParsableCommand {
     @Flag(help: "Request sound permission.")
     var sound: Bool = false
 
-    @Flag(help: "Request badge permission.")
-    var badge: Bool = false
-
     @Flag(help: "Request provisional permission.")
     var provisional: Bool = false
 
@@ -39,9 +36,6 @@ struct RequestPermissionCommand: AsyncParsableCommand {
             var options: UNAuthorizationOptions = [.alert]
             if sound {
                 options.insert(.sound)
-            }
-            if badge {
-                options.insert(.badge)
             }
             if provisional {
                 options.insert(.provisional)

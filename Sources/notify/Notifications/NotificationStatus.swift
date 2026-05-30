@@ -4,7 +4,6 @@ struct NotificationStatus: Codable {
     let authorization: String
     let alerts: Bool
     let sounds: Bool
-    let badges: Bool
 }
 
 extension NotificationStatus {
@@ -12,7 +11,6 @@ extension NotificationStatus {
         authorization = settings.authorizationStatus.notifyValue
         alerts = settings.alertSetting == .enabled
         sounds = settings.soundSetting == .enabled
-        badges = settings.badgeSetting == .enabled
     }
 }
 
