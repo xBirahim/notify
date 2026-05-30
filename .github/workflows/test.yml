@@ -24,4 +24,4 @@ jobs:
         run: swift build -c release
 
       - name: Test
-        run: swift test
+        run: swift test --disable-swift-testing

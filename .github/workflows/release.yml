@@ -38,7 +38,7 @@ jobs:
           fi
 
       - name: Build & test
-        run: swift build -c release && swift test
+        run: swift build -c release && swift test --disable-swift-testing
 
       - name: Create GitHub Release
         env:
