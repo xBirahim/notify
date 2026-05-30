@@ -203,7 +203,7 @@ final class NotifyCategoryTests: XCTestCase {
 
     func testNotificationSoundArgumentParsing() {
         XCTAssertEqual(NotificationSound(argument: "default"), .default)
-        XCTAssertEqual(NotificationSound(argument: "none"), .none)
+        XCTAssertEqual(NotificationSound(argument: "none"), NotificationSound.none)
         XCTAssertEqual(NotificationSound(argument: "Purr"), .named("Purr"))
         XCTAssertEqual(NotificationSound(argument: "Sosumi"), .named("Sosumi"))
     }
