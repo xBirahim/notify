@@ -2,8 +2,12 @@
 
 ![Swift 6.0](https://img.shields.io/badge/Swift-6.0-orange.svg)
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-blue.svg)
-![Version 0.2.0](https://img.shields.io/badge/version-0.2.0-brightgreen.svg)
+![Version 0.3.0](https://img.shields.io/badge/version-0.3.0-brightgreen.svg)
 ![MIT](https://img.shields.io/badge/license-MIT-green.svg)
+
+<p align="center">
+  <img src=".github/assets/notify-logo.svg" alt="notify logo" width="256" />
+</p>
 
 `notify` is a macOS command-line tool for sending and managing native notifications. Designed for **AI agents** running on macOS, it lets agents keep the user informed, ask for decisions via interactive action buttons, and report results — all through native macOS notifications.
 
@@ -373,24 +377,24 @@ notify send "Silent" --sound none
 
 ### Built-in system sounds
 
-| Name | Description |
-|---|---|
-| `Basso` | Deep bass |
-| `Blow` | Air blow |
-| `Bottle` | Glass bottle |
-| `Frog` | Frog croak |
-| `Funk` | Funky riff |
-| `Glass` | Glass breaking |
-| `Hero` | Heroic fanfare |
-| `Morse` | Morse code |
-| `Ping` | Sonar ping |
-| `Pop` | Pop cork |
-| `Purr` | Cat purr |
-| `Sosumi` | Classic macOS chime |
-| `Submarine` | Submarine sonar |
-| `Tink` | Small bell |
-| `default` | System default notification sound |
-| `none` | No sound |
+| Name        | Description                       |
+| ----------- | --------------------------------- |
+| `Basso`     | Deep bass                         |
+| `Blow`      | Air blow                          |
+| `Bottle`    | Glass bottle                      |
+| `Frog`      | Frog croak                        |
+| `Funk`      | Funky riff                        |
+| `Glass`     | Glass breaking                    |
+| `Hero`      | Heroic fanfare                    |
+| `Morse`     | Morse code                        |
+| `Ping`      | Sonar ping                        |
+| `Pop`       | Pop cork                          |
+| `Purr`      | Cat purr                          |
+| `Sosumi`    | Classic macOS chime               |
+| `Submarine` | Submarine sonar                   |
+| `Tink`      | Small bell                        |
+| `default`   | System default notification sound |
+| `none`      | No sound                          |
 
 Sound files are loaded from `/System/Library/Sounds/` and `~/Library/Sounds/`. Supported formats: `.aiff`, `.caf`, `.wav`, `.mp3`, `.m4a`.
 
@@ -406,12 +410,12 @@ notify send "Critical failure" --sound Sosumi --interruption-level active
 
 `notify` registers these categories:
 
-| Category | Buttons | Use case |
-|---|---|---|
-| `plain` | *(none)* | Pure information, no interaction |
-| `alert` | ACK, OPEN, SILENCE | Alert that needs acknowledgment |
-| `job` | ACK, RETRY, OPEN | Background job the user can retry |
-| `deploy` | OPEN, ROLLBACK, ACK | Operation to approve or rollback |
+| Category | Buttons             | Use case                          |
+| -------- | ------------------- | --------------------------------- |
+| `plain`  | *(none)*            | Pure information, no interaction  |
+| `alert`  | ACK, OPEN, SILENCE  | Alert that needs acknowledgment   |
+| `job`    | ACK, RETRY, OPEN    | Background job the user can retry |
+| `deploy` | OPEN, ROLLBACK, ACK | Operation to approve or rollback  |
 
 When user clicks the notification body (default action) or the `OPEN` button, `notify` opens the attached `--url` if provided.
 

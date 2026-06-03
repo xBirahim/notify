@@ -1,0 +1,17 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">notify minimalist logo</title>
+  <desc id="desc">Minimal logo for notify: a notification bubble with a command prompt mark and status dot.</desc>
+
+  <!-- Background -->
+  <rect x="48" y="48" width="416" height="416" rx="104" fill="#0F172A"/>
+
+  <!-- Notification card -->
+  <path d="M150 166C150 146.118 166.118 130 186 130H326C345.882 130 362 146.118 362 166V276C362 295.882 345.882 312 326 312H238L184 360V312H186C166.118 312 150 295.882 150 276V166Z" fill="#F8FAFC"/>
+
+  <!-- CLI prompt -->
+  <path d="M201 205L231 226L201 247" stroke="#0F172A" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M254 249H310" stroke="#0F172A" stroke-width="22" stroke-linecap="round"/>
+
+  <!-- Notification/status dot -->
+  <circle cx="348" cy="154" r="38" fill="#38BDF8" stroke="#0F172A" stroke-width="18"/>
+</svg>
